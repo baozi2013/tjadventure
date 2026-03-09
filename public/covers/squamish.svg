@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="900" viewBox="0 0 1600 900" role="img" aria-label="forest town">
+  <defs>
+    <linearGradient id="g" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#86efac"/>
+      <stop offset="55%" stop-color="#d9f99d"/>
+      <stop offset="100%" stop-color="#f7fee7"/>
+    </linearGradient>
+  </defs>
+  <rect width="1600" height="900" fill="url(#g)"/>
+  <circle cx="1320" cy="180" r="96" fill="rgba(255,255,255,0.35)"/>
+  <path d="M0 690 C220 610, 420 730, 640 650 C860 570, 1060 720, 1280 640 C1420 590, 1520 620, 1600 600 L1600 900 L0 900 Z" fill="rgba(255,255,255,0.32)"/>
+  <path d="M0 760 C260 700, 420 800, 700 740 C980 680, 1200 800, 1600 730 L1600 900 L0 900 Z" fill="rgba(255,255,255,0.48)"/>
+</svg>
