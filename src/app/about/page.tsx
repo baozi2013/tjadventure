@@ -37,6 +37,15 @@ export default function AboutPage() {
             <p className="mt-2 text-base leading-8 text-neutral-700 dark:text-neutral-300">
               拍摄设备：iPhone 17、GoPro 10、Sony a6300。
             </p>
+            <div className="relative mt-4 h-72 w-full overflow-hidden rounded-2xl border border-black/10 sm:h-96 dark:border-white/10">
+              <Image
+                src="/about/tian.png"
+                alt="Tian 在 Lake Tahoe"
+                fill
+                className="object-cover"
+                sizes="(max-width: 640px) 100vw, 768px"
+              />
+            </div>
           </article>
 
           <article>
@@ -63,10 +72,28 @@ export default function AboutPage() {
 
           <article>
             <h2 className="text-xl font-semibold">William 大宝</h2>
+            <div className="relative mt-4 h-72 w-full overflow-hidden rounded-2xl border border-black/10 sm:h-96 dark:border-white/10">
+              <Image
+                src="/about/william.png"
+                alt="William"
+                fill
+                className="object-cover"
+                sizes="(max-width: 640px) 100vw, 768px"
+              />
+            </div>
           </article>
 
           <article>
             <h2 className="text-xl font-semibold">George 二宝</h2>
+            <div className="relative mt-4 h-72 w-full overflow-hidden rounded-2xl border border-black/10 sm:h-96 dark:border-white/10">
+              <Image
+                src="/about/george.png"
+                alt="George"
+                fill
+                className="object-cover"
+                sizes="(max-width: 640px) 100vw, 768px"
+              />
+            </div>
           </article>
         </div>
       </section>
