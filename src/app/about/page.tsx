@@ -8,7 +8,7 @@ export default function AboutPage() {
         <Link href="/" className="rounded-full px-3 py-1.5 transition hover:bg-black hover:text-white dark:hover:bg-white dark:hover:text-black">
           Home
         </Link>
-        <Link href="/about" className="rounded-full bg-black px-3 py-1.5 text-white dark:bg-white dark:text-black">
+        <Link href="/about" className="rounded-full border border-black/20 bg-white px-3 py-1.5 text-neutral-900 shadow-sm dark:border-white/25 dark:bg-neutral-900 dark:text-white">
           About Us
         </Link>
         <Link href="/gears" className="rounded-full px-3 py-1.5 transition hover:bg-black hover:text-white dark:hover:bg-white dark:hover:text-black">
