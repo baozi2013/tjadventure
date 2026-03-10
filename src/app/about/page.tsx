@@ -1,3 +1,4 @@
+import Image from "next/image";
 import Link from "next/link";
 
 export default function AboutPage() {
@@ -49,6 +50,15 @@ export default function AboutPage() {
             <p className="mt-2 text-base leading-8 text-neutral-700 dark:text-neutral-300">
               拍摄设备：iPhone 16 Pro、佳能单反、徕卡相机。
             </p>
+            <div className="relative mt-4 h-64 w-full overflow-hidden rounded-2xl border border-black/10 sm:h-80 dark:border-white/10">
+              <Image
+                src="/trips/palm-spring-2025/day1-3.jpg"
+                alt="Jane 在 Joshua Tree"
+                fill
+                className="object-cover"
+                sizes="(max-width: 640px) 100vw, 768px"
+              />
+            </div>
           </article>
 
           <article>
