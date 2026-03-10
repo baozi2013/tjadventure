@@ -1,11 +1,23 @@
 import Image from "next/image";
-import { categories, featuredPost, posts } from "@/data/posts";
+import Link from "next/link";
+import { getAllPosts } from "@/lib/posts";
 
 export default function Home() {
+  const allPosts = getAllPosts();
+  const [featuredPost, ...posts] = allPosts;
+  const categories = [
+    "全部",
+    ...Array.from(new Set(allPosts.map((post) => post.category.split(" · ")[0]))),
+  ];
+
+  if (!featuredPost) {
+    return <main className="mx-auto max-w-4xl px-6 py-20">No posts yet.</main>;
+  }
+
   return (
     <main className="mx-auto min-h-screen w-full max-w-6xl px-5 pb-20 pt-10 sm:px-8 lg:px-10">
       <header className="mb-10 border-b border-black/10 pb-8 dark:border-white/10">
-        <p className="text-xs tracking-[0.2em] text-neutral-500">TJTRAVEL</p>
+        <p className="text-xs tracking-[0.2em] text-neutral-500">TJ ADVENTURE</p>
         <h1 className="mt-3 text-4xl font-semibold tracking-tight sm:text-5xl">
           把旅行写成能重走的路线
         </h1>
@@ -15,7 +27,7 @@ export default function Home() {
       </header>
 
       <section className="mb-12 grid gap-5 lg:grid-cols-[1.35fr_1fr]">
-        <a
+        <Link
           href={`/posts/${featuredPost.slug}`}
           className="group overflow-hidden rounded-3xl border border-black/10 bg-white shadow-sm transition hover:-translate-y-0.5 hover:shadow-md dark:border-white/10 dark:bg-neutral-950"
         >
@@ -30,12 +42,8 @@ export default function Home() {
             />
           </div>
           <div className="p-6">
-            <p className="text-xs uppercase tracking-wider text-neutral-500">
-              {featuredPost.category}
-            </p>
-            <h2 className="mt-2 text-2xl font-semibold leading-tight">
-              {featuredPost.title}
-            </h2>
+            <p className="text-xs uppercase tracking-wider text-neutral-500">{featuredPost.category}</p>
+            <h2 className="mt-2 text-2xl font-semibold leading-tight">{featuredPost.title}</h2>
             <p className="mt-3 text-sm leading-6 text-neutral-600 dark:text-neutral-300">
               {featuredPost.excerpt}
             </p>
@@ -43,27 +51,25 @@ export default function Home() {
               {featuredPost.date} · {featuredPost.readTime}
             </p>
           </div>
-        </a>
+        </Link>
 
         <div className="rounded-3xl border border-black/10 bg-white p-6 dark:border-white/10 dark:bg-neutral-950">
-          <h3 className="text-sm font-semibold uppercase tracking-widest text-neutral-500">
-            分类
-          </h3>
+          <h3 className="text-sm font-semibold uppercase tracking-widest text-neutral-500">分类</h3>
           <div className="mt-4 flex flex-wrap gap-2">
             {categories.map((item) => (
-              <button
+              <span
                 key={item}
-                className="rounded-full border border-black/10 px-4 py-1.5 text-sm text-neutral-700 transition hover:bg-black hover:text-white dark:border-white/15 dark:text-neutral-200 dark:hover:bg-white dark:hover:text-black"
+                className="rounded-full border border-black/10 px-4 py-1.5 text-sm text-neutral-700 dark:border-white/15 dark:text-neutral-200"
               >
                 {item}
-              </button>
+              </span>
             ))}
           </div>
 
           <div className="mt-8 rounded-2xl bg-neutral-50 p-4 dark:bg-neutral-900">
             <p className="text-sm font-medium">本周推荐</p>
             <p className="mt-2 text-sm leading-6 text-neutral-600 dark:text-neutral-300">
-              如果你只看一篇，就看 Joffre Lakes。短线高回报，风景密度非常离谱。
+              如果你只看一篇，就看 {featuredPost.title.split("｜")[0]}。短线高回报，风景密度非常离谱。
             </p>
           </div>
         </div>
@@ -72,14 +78,11 @@ export default function Home() {
       <section>
         <div className="mb-5 flex items-end justify-between">
           <h3 className="text-xl font-semibold">最新文章</h3>
-          <a href="#" className="text-sm text-neutral-500 hover:text-neutral-900 dark:hover:text-white">
-            查看全部
-          </a>
         </div>
 
         <div className="grid gap-5 sm:grid-cols-2">
           {posts.map((post) => (
-            <a
+            <Link
               key={post.slug}
               href={`/posts/${post.slug}`}
               className="group overflow-hidden rounded-2xl border border-black/10 bg-white shadow-sm transition hover:-translate-y-0.5 hover:shadow-md dark:border-white/10 dark:bg-neutral-950"
@@ -105,7 +108,7 @@ export default function Home() {
                   {post.date} · {post.readTime}
                 </p>
               </div>
-            </a>
+            </Link>
           ))}
         </div>
       </section>

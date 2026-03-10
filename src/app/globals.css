@@ -34,3 +34,43 @@ a {
   color: inherit;
   text-decoration: none;
 }
+
+.mdx-content {
+  font-size: 1rem;
+  line-height: 1.9;
+}
+
+.mdx-content h2,
+.mdx-content h3 {
+  margin-top: 2rem;
+  margin-bottom: 0.75rem;
+  font-weight: 600;
+  scroll-margin-top: 96px;
+}
+
+.mdx-content h2 {
+  font-size: 1.5rem;
+}
+
+.mdx-content h3 {
+  font-size: 1.2rem;
+}
+
+.mdx-content p,
+.mdx-content ul,
+.mdx-content ol {
+  margin: 0.9rem 0;
+  color: color-mix(in oklab, var(--foreground) 82%, transparent);
+}
+
+.mdx-content img {
+  width: 100%;
+  height: auto;
+  border-radius: 0.85rem;
+  margin: 1rem 0;
+}
+
+.mdx-content a {
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}

@@ -13,7 +13,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "TJTravel",
+  title: "TJ Adventure",
   description: "Travel stories and practical guides.",
 };
 
