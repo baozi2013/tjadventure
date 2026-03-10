@@ -4,7 +4,10 @@ import { getAllPosts } from "@/lib/posts";
 
 export default function Home() {
   const allPosts = getAllPosts();
-  const seasonalHighlights = allPosts.slice(0, 3);
+  const highlightSlugsInOrder = ["maui-2025-family-trip", "teton-yellowstone-2024"];
+  const seasonalHighlights = highlightSlugsInOrder
+    .map((slug) => allPosts.find((post) => post.slug === slug))
+    .filter((post): post is (typeof allPosts)[number] => Boolean(post));
   const highlightSlugs = new Set(seasonalHighlights.map((post) => post.slug));
   const recentPosts = allPosts.filter((post) => !highlightSlugs.has(post.slug)).slice(0, 12);
 
