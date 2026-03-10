@@ -18,25 +18,28 @@ export default function GearsPage() {
         </Link>
       </nav>
 
-      <header className="rounded-3xl border border-black/10 bg-white p-7 dark:border-white/10 dark:bg-neutral-950">
+      <section className="rounded-3xl border border-black/10 bg-white p-7 dark:border-white/10 dark:bg-neutral-950">
         <h1 className="text-3xl font-semibold tracking-tight">Gears</h1>
+        <p className="mt-3 text-base leading-8 text-neutral-700 dark:text-neutral-300">
+          已创建两个装备清单 markdown，内容你稍后可以直接补充。
+        </p>
 
         <div className="mt-6 grid gap-3 sm:grid-cols-2">
           <article className="rounded-2xl border border-black/10 px-4 py-4 dark:border-white/10">
-            <p className="font-semibold">Tesla + FSD</p>
-            <p className="mt-2 text-sm leading-7 text-neutral-700 dark:text-neutral-300">
-              长途自驾主力，路线规划和疲劳管理明显更轻松。
+            <p className="font-semibold">露营装备</p>
+            <p className="mt-2 font-mono text-sm text-neutral-700 dark:text-neutral-300">
+              content/gears/camping-gear.md
             </p>
           </article>
 
           <article className="rounded-2xl border border-black/10 px-4 py-4 dark:border-white/10">
-            <p className="font-semibold">Seestar S30</p>
-            <p className="mt-2 text-sm leading-7 text-neutral-700 dark:text-neutral-300">
-              旅行拍深空和月亮的轻量设备，架设快、出片效率高。
+            <p className="font-semibold">摄影装备</p>
+            <p className="mt-2 font-mono text-sm text-neutral-700 dark:text-neutral-300">
+              content/gears/photo-gear.md
             </p>
           </article>
         </div>
-      </header>
+      </section>
     </main>
   );
 }
