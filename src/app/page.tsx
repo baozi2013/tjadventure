@@ -17,7 +17,7 @@ export default function Home() {
   return (
     <main className="mx-auto min-h-screen w-full max-w-6xl px-5 pb-20 pt-10 sm:px-8 lg:px-10">
       <nav className="mb-6 flex flex-wrap items-center gap-2 text-sm font-medium text-neutral-600 dark:text-neutral-300">
-        <Link href="/" className="rounded-full px-3 py-1.5 transition hover:bg-black hover:text-white dark:hover:bg-white dark:hover:text-black">
+        <Link href="/" className="rounded-full bg-black px-3 py-1.5 text-white dark:bg-white dark:text-black">
           Home
         </Link>
         <Link href="/about" className="rounded-full px-3 py-1.5 transition hover:bg-black hover:text-white dark:hover:bg-white dark:hover:text-black">
