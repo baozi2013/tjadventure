@@ -13,8 +13,16 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "TJ Adventure",
+  title: {
+    default: "TJ Adventure",
+    template: "%s | TJ Adventure",
+  },
   description: "Travel stories and practical guides.",
+  icons: {
+    icon: [{ url: "/icon.png", type: "image/png" }],
+    shortcut: "/icon.png",
+    apple: "/icon.png",
+  },
 };
 
 export default function RootLayout({

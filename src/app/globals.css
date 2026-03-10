@@ -1,8 +1,8 @@
 @import "tailwindcss";
 
 :root {
-  --background: #fafaf9;
-  --foreground: #111111;
+  --background: #ece8e3;
+  --foreground: #153d59;
 }
 
 @theme inline {
@@ -12,20 +12,16 @@
   --font-mono: var(--font-geist-mono);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #f5f5f5;
-  }
-}
-
 * {
   box-sizing: border-box;
 }
 
 body {
   margin: 0;
-  background: var(--background);
+  background:
+    radial-gradient(circle at 15% 10%, rgba(255, 255, 255, 0.82) 0%, rgba(255, 255, 255, 0) 35%),
+    radial-gradient(circle at 85% 100%, rgba(255, 255, 255, 0.6) 0%, rgba(255, 255, 255, 0) 30%),
+    var(--background);
   color: var(--foreground);
   font-family: var(--font-geist-sans), "PingFang SC", "Hiragino Sans GB", "Noto Sans CJK SC", "Microsoft YaHei", sans-serif;
 }
