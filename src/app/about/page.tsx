@@ -13,7 +13,7 @@ export default function AboutPage() {
         <Link href="/gears" className="rounded-full px-3 py-1.5 transition hover:bg-black hover:text-white dark:hover:bg-white dark:hover:text-black">
           Gears
         </Link>
-        <Link href="/#all-trips" className="rounded-full px-3 py-1.5 transition hover:bg-black hover:text-white dark:hover:bg-white dark:hover:text-black">
+        <Link href="/trips" className="rounded-full px-3 py-1.5 transition hover:bg-black hover:text-white dark:hover:bg-white dark:hover:text-black">
           All Trips
         </Link>
       </nav>

@@ -26,9 +26,9 @@ export default function Home() {
         <Link href="/gears" className="rounded-full px-3 py-1.5 transition hover:bg-black hover:text-white dark:hover:bg-white dark:hover:text-black">
           Gears
         </Link>
-        <a href="#all-trips" className="rounded-full px-3 py-1.5 transition hover:bg-black hover:text-white dark:hover:bg-white dark:hover:text-black">
+        <Link href="/trips" className="rounded-full px-3 py-1.5 transition hover:bg-black hover:text-white dark:hover:bg-white dark:hover:text-black">
           All Trips
-        </a>
+        </Link>
       </nav>
 
       <header className="mb-10 border-b border-black/10 pb-8 dark:border-white/10">
@@ -93,6 +93,9 @@ export default function Home() {
       <section id="all-trips">
         <div className="mb-5 flex items-end justify-between">
           <h3 className="text-xl font-semibold">最新文章</h3>
+          <Link href="/trips" className="text-sm text-neutral-500 hover:text-neutral-900 dark:hover:text-white">
+            查看全部
+          </Link>
         </div>
 
         <div className="grid gap-5 sm:grid-cols-2">
