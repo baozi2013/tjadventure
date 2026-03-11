@@ -29,7 +29,7 @@ export default function AboutPage() {
           <article>
             <h2 className="text-xl font-semibold">Tian 天</h2>
             <p className="mt-2 text-base leading-8 text-neutral-700 dark:text-neutral-300">
-              负责把行程和后勤安排得明明白白，爱拍美女和美景。
+              负责把行程和后勤安排得明明白白，爱拍美女和美景，骑行人。
             </p>
             <p className="mt-2 text-base leading-8 text-neutral-700 dark:text-neutral-300">
               导游，计划精准，行程丰富，日常维护博客网站。
@@ -54,7 +54,7 @@ export default function AboutPage() {
               言情小说爱好者，只负责美丽。
             </p>
             <p className="mt-2 text-base leading-8 text-neutral-700 dark:text-neutral-300">
-              一家之主，两娃的辣妈，运动健将，lululemon 深度患者。
+              一家之主，两娃的辣妈，运动健将，lululemon 深度患者，just dance 达人。
             </p>
             <p className="mt-2 text-base leading-8 text-neutral-700 dark:text-neutral-300">
               拍摄设备：iPhone 16 Pro。
@@ -71,7 +71,7 @@ export default function AboutPage() {
           </article>
 
           <article>
-            <h2 className="text-xl font-semibold">William 大宝</h2>
+            <h2 className="text-xl font-semibold">William 大宝 包子</h2>
             <div className="relative mt-4 h-72 w-full overflow-hidden rounded-2xl border border-black/10 sm:h-96 dark:border-white/10">
               <Image
                 src="/about/william.png"
@@ -84,7 +84,7 @@ export default function AboutPage() {
           </article>
 
           <article>
-            <h2 className="text-xl font-semibold">George 二宝</h2>
+            <h2 className="text-xl font-semibold">George 二宝 汤圆</h2>
             <div className="relative mt-4 h-72 w-full overflow-hidden rounded-2xl border border-black/10 sm:h-96 dark:border-white/10">
               <Image
                 src="/about/george.png"
