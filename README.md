@@ -34,3 +34,40 @@ You can check out [the Next.js GitHub repository](https://github.com/vercel/next
 The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
 
 Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+
+## Deploy on NAS (Docker)
+
+This repo now includes:
+
+- `Dockerfile` (multi-stage build, Next.js standalone output)
+- `docker-compose.nas.yml`
+
+### 1) Copy code to NAS
+
+From your Mac:
+
+```bash
+rsync -av --delete /Users/tianhengzhou/Documents/tjadventure/ tianheng@192.168.68.88:/home/tianheng/tjadventure/
+```
+
+### 2) Build and run on NAS
+
+```bash
+ssh tianheng@192.168.68.88
+cd /home/tianheng/tjadventure
+docker compose -f docker-compose.nas.yml up -d --build
+docker ps | grep tjadventure-web
+```
+
+### 3) Open site in LAN
+
+```text
+http://192.168.68.88:3000
+```
+
+### Optional: update deployment after content change
+
+```bash
+rsync -av --delete /Users/tianhengzhou/Documents/tjadventure/ tianheng@192.168.68.88:/home/tianheng/tjadventure/
+ssh tianheng@192.168.68.88 "cd /home/tianheng/tjadventure && docker compose -f docker-compose.nas.yml up -d --build"
+```
