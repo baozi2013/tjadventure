@@ -1,6 +1,33 @@
+import fs from "node:fs";
+import path from "node:path";
 import Link from "next/link";
+import { compileMDX } from "next-mdx-remote/rsc";
+import remarkGfm from "remark-gfm";
 
-export default function GearsPage() {
+const GEARS_DIR = path.join(process.cwd(), "content/gears");
+
+async function renderGearMarkdown(fileName: string) {
+  const fullPath = path.join(GEARS_DIR, fileName);
+  const source = fs.existsSync(fullPath)
+    ? fs.readFileSync(fullPath, "utf8")
+    : "# 内容缺失\n\n暂未找到该装备清单文件。";
+
+  const { content } = await compileMDX({
+    source,
+    options: {
+      mdxOptions: {
+        remarkPlugins: [remarkGfm],
+      },
+    },
+  });
+
+  return content;
+}
+
+export default async function GearsPage() {
+  const campingContent = await renderGearMarkdown("camping-gear.md");
+  const photoContent = await renderGearMarkdown("photo-gear.md");
+
   return (
     <main className="mx-auto min-h-screen w-full max-w-4xl px-5 pb-20 pt-10 sm:px-8 lg:px-10">
       <nav className="mb-8 flex flex-wrap items-center gap-2 text-sm font-medium text-neutral-600 dark:text-neutral-300">
@@ -21,22 +48,16 @@ export default function GearsPage() {
       <section className="rounded-3xl border border-black/10 bg-white p-7 dark:border-white/10 dark:bg-neutral-950">
         <h1 className="text-3xl font-semibold tracking-tight">Gears</h1>
         <p className="mt-3 text-base leading-8 text-neutral-700 dark:text-neutral-300">
-          已创建两个装备清单 markdown，内容你稍后可以直接补充。
+          已根据当前素材补充了露营与摄影装备初版，你可以继续在对应 markdown 里增删。
         </p>
 
-        <div className="mt-6 grid gap-3 sm:grid-cols-2">
-          <article className="rounded-2xl border border-black/10 px-4 py-4 dark:border-white/10">
-            <p className="font-semibold">露营装备</p>
-            <p className="mt-2 font-mono text-sm text-neutral-700 dark:text-neutral-300">
-              content/gears/camping-gear.md
-            </p>
+        <div className="mt-6 space-y-8">
+          <article className="rounded-2xl border border-black/10 px-5 py-5 dark:border-white/10">
+            <div className="mdx-content max-w-none">{campingContent}</div>
           </article>
 
-          <article className="rounded-2xl border border-black/10 px-4 py-4 dark:border-white/10">
-            <p className="font-semibold">摄影装备</p>
-            <p className="mt-2 font-mono text-sm text-neutral-700 dark:text-neutral-300">
-              content/gears/photo-gear.md
-            </p>
+          <article className="rounded-2xl border border-black/10 px-5 py-5 dark:border-white/10">
+            <div className="mdx-content max-w-none">{photoContent}</div>
           </article>
         </div>
       </section>
