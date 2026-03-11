@@ -47,9 +47,6 @@ export default async function GearsPage() {
 
       <section className="rounded-3xl border border-black/10 bg-white p-7 dark:border-white/10 dark:bg-neutral-950">
         <h1 className="text-3xl font-semibold tracking-tight">Gears</h1>
-        <p className="mt-3 text-base leading-8 text-neutral-700 dark:text-neutral-300">
-          已根据当前素材补充了露营与摄影装备初版，你可以继续在对应 markdown 里增删。
-        </p>
 
         <div className="mt-6 space-y-8">
           <article className="rounded-2xl border border-black/10 px-5 py-5 dark:border-white/10">
