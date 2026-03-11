@@ -57,7 +57,7 @@ export default function AboutPage() {
               一家之主，两娃的辣妈，运动健将，lululemon 深度患者。
             </p>
             <p className="mt-2 text-base leading-8 text-neutral-700 dark:text-neutral-300">
-              拍摄设备：iPhone 16 Pro、佳能单反、徕卡相机。
+              拍摄设备：iPhone 16 Pro。
             </p>
             <div className="relative mt-4 h-64 w-full overflow-hidden rounded-2xl border border-black/10 sm:h-80 dark:border-white/10">
               <Image
