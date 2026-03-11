@@ -47,14 +47,14 @@ This repo now includes:
 From your Mac:
 
 ```bash
-rsync -av --delete /Users/tianhengzhou/Documents/tjadventure/ tianheng@192.168.68.88:/home/tianheng/tjadventure/
+rsync -av --delete /Users/tianhengzhou/Documents/tjadventure/ tianheng@192.168.68.88:~/tjadventure/
 ```
 
 ### 2) Build and run on NAS
 
 ```bash
 ssh tianheng@192.168.68.88
-cd /home/tianheng/tjadventure
+cd ~/tjadventure
 docker compose -f docker-compose.nas.yml up -d --build
 docker ps | grep tjadventure-web
 ```
@@ -68,6 +68,6 @@ http://192.168.68.88:3000
 ### Optional: update deployment after content change
 
 ```bash
-rsync -av --delete /Users/tianhengzhou/Documents/tjadventure/ tianheng@192.168.68.88:/home/tianheng/tjadventure/
-ssh tianheng@192.168.68.88 "cd /home/tianheng/tjadventure && docker compose -f docker-compose.nas.yml up -d --build"
+rsync -av --delete /Users/tianhengzhou/Documents/tjadventure/ tianheng@192.168.68.88:~/tjadventure/
+ssh tianheng@192.168.68.88 "cd ~/tjadventure && docker compose -f docker-compose.nas.yml up -d --build"
 ```
