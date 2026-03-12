@@ -65,6 +65,25 @@ docker ps | grep tjadventure-web
 http://192.168.68.88:3000
 ```
 
+### One-command deploy script (from Mac)
+
+```bash
+chmod +x scripts/deploy-nas.sh
+./scripts/deploy-nas.sh
+```
+
+With SSH tunnel (open local `http://localhost:13000`):
+
+```bash
+./scripts/deploy-nas.sh --tunnel
+```
+
+If your NAS repo is not default path:
+
+```bash
+REMOTE_DIR='~/projects/tjadventure' ./scripts/deploy-nas.sh
+```
+
 ### Optional: update deployment after content change
 
 ```bash
