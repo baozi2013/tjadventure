@@ -33,6 +33,16 @@ export default function Home() {
       </nav>
 
       <header className="mb-10 border-b border-black/10 pb-8 dark:border-white/10">
+        <div className="mb-6 overflow-hidden rounded-2xl border border-black/10 bg-white shadow-sm dark:border-white/10 dark:bg-neutral-950">
+          <Image
+            src="/branding/TJ_Adventure_patagonia_banner.jpg"
+            alt="TJ Adventure banner"
+            width={881}
+            height={264}
+            className="h-auto w-full object-cover"
+            priority
+          />
+        </div>
         <p className="text-xs tracking-[0.2em] text-neutral-500">TJ ADVENTURE</p>
         <h1 className="mt-3 text-4xl font-semibold tracking-tight sm:text-5xl">
           把旅行写成能重走的路线
