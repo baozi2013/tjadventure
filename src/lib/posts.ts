@@ -24,6 +24,8 @@ export type Heading = {
   id: string;
 };
 
+type RawFrontmatter = Record<string, unknown>;
+
 function slugify(text: string) {
   return text
     .trim()
@@ -31,6 +33,85 @@ function slugify(text: string) {
     .replace(/[\s/]+/g, "-")
     .replace(/[^a-z0-9\u4e00-\u9fa5\-]/g, "")
     .replace(/-+/g, "-");
+}
+
+function isObjectRecord(value: unknown): value is RawFrontmatter {
+  return typeof value === "object" && value !== null && !Array.isArray(value);
+}
+
+function failFrontmatter(filePath: string, message: string): never {
+  throw new Error(`[posts] Invalid frontmatter in "${filePath}": ${message}`);
+}
+
+function readRequiredText(frontmatter: RawFrontmatter, key: keyof PostFrontmatter, filePath: string): string {
+  const value = frontmatter[key];
+  if (typeof value !== "string" || value.trim().length === 0) {
+    failFrontmatter(filePath, `"${key}" must be a non-empty string.`);
+  }
+
+  return value.trim();
+}
+
+function validateDate(rawDate: string, filePath: string): string {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(rawDate)) {
+    failFrontmatter(filePath, `"date" must use YYYY-MM-DD format.`);
+  }
+
+  if (Number.isNaN(Date.parse(rawDate))) {
+    failFrontmatter(filePath, `"date" is not a valid calendar date.`);
+  }
+
+  return rawDate;
+}
+
+function validateCoverImage(rawCoverImage: string, filePath: string): string {
+  if (rawCoverImage.startsWith("/") || /^https?:\/\//.test(rawCoverImage)) {
+    return rawCoverImage;
+  }
+
+  failFrontmatter(filePath, `"coverImage" must be an absolute path (starting with "/") or an http(s) URL.`);
+}
+
+function readOptionalTags(frontmatter: RawFrontmatter, filePath: string): string[] | undefined {
+  const value = frontmatter.tags;
+  if (value == null) return undefined;
+
+  if (!Array.isArray(value)) {
+    failFrontmatter(filePath, `"tags" must be an array of strings when provided.`);
+  }
+
+  const tags = value.map((tag) => {
+    if (typeof tag !== "string" || tag.trim().length === 0) {
+      failFrontmatter(filePath, `"tags" entries must be non-empty strings.`);
+    }
+    return tag.trim();
+  });
+
+  return tags;
+}
+
+function parsePostFrontmatter(data: unknown, filePath: string): PostFrontmatter {
+  if (!isObjectRecord(data)) {
+    failFrontmatter(filePath, "frontmatter must be an object.");
+  }
+
+  const title = readRequiredText(data, "title", filePath);
+  const excerpt = readRequiredText(data, "excerpt", filePath);
+  const date = validateDate(readRequiredText(data, "date", filePath), filePath);
+  const category = readRequiredText(data, "category", filePath);
+  const readTime = readRequiredText(data, "readTime", filePath);
+  const coverImage = validateCoverImage(readRequiredText(data, "coverImage", filePath), filePath);
+  const tags = readOptionalTags(data, filePath);
+
+  return {
+    title,
+    excerpt,
+    date,
+    category,
+    readTime,
+    coverImage,
+    tags,
+  };
 }
 
 export function getAllPosts(): PostSummary[] {
@@ -49,7 +130,7 @@ export function getAllPosts(): PostSummary[] {
 
       return {
         slug,
-        ...(data as PostFrontmatter),
+        ...parsePostFrontmatter(data, fullPath),
       };
     })
     .sort((a, b) => +new Date(b.date) - +new Date(a.date));
@@ -64,7 +145,7 @@ export function getPostBySlug(slug: string) {
 
   return {
     slug,
-    frontmatter: data as PostFrontmatter,
+    frontmatter: parsePostFrontmatter(data, fullPath),
     content,
     headings: extractHeadings(content),
   };
