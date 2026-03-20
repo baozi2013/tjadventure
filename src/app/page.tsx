@@ -58,7 +58,7 @@ export default function Home() {
         </div>
 
         <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
-          {seasonalHighlights.map((post) => (
+          {seasonalHighlights.map((post, index) => (
             <Link
               key={post.slug}
               href={`/posts/${post.slug}`}
@@ -70,8 +70,8 @@ export default function Home() {
                   alt={post.title}
                   fill
                   className="object-cover transition duration-500 group-hover:scale-[1.03]"
-                  sizes="(max-width: 1024px) 100vw, 33vw"
-                  priority
+                  sizes="(max-width: 639px) 100vw, (max-width: 1023px) 50vw, 33vw"
+                  priority={index === 0}
                 />
               </div>
               <div className="p-5">
@@ -117,7 +117,7 @@ export default function Home() {
                     alt={post.title}
                     fill
                     className="object-cover transition duration-500 group-hover:scale-[1.03]"
-                    sizes="(max-width: 1024px) 100vw, 33vw"
+                    sizes="(max-width: 639px) 100vw, (max-width: 1023px) 50vw, 33vw"
                   />
                 </div>
                 <div className="p-5">

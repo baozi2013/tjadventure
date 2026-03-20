@@ -6,6 +6,7 @@ import remarkGfm from "remark-gfm";
 import rehypeSlug from "rehype-slug";
 import rehypeAutolinkHeadings from "rehype-autolink-headings";
 import { getAllPosts, getPostBySlug } from "@/lib/posts";
+import { mdxComponents } from "@/components/mdx-components";
 
 type Params = {
   params: Promise<{ slug: string }>;
@@ -23,6 +24,7 @@ export default async function PostDetail({ params }: Params) {
 
   const { content } = await compileMDX({
     source: post.content,
+    components: mdxComponents,
     options: {
       mdxOptions: {
         remarkPlugins: [remarkGfm],
@@ -61,7 +63,7 @@ export default async function PostDetail({ params }: Params) {
               alt={post.frontmatter.title}
               fill
               className="object-cover"
-              sizes="100vw"
+              sizes="(max-width: 1024px) 100vw, 860px"
               priority
             />
           </div>

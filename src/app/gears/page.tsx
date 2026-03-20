@@ -3,6 +3,7 @@ import path from "node:path";
 import Link from "next/link";
 import { compileMDX } from "next-mdx-remote/rsc";
 import remarkGfm from "remark-gfm";
+import { mdxComponents } from "@/components/mdx-components";
 
 const GEARS_DIR = path.join(process.cwd(), "content/gears");
 
@@ -14,6 +15,7 @@ async function renderGearMarkdown(fileName: string) {
 
   const { content } = await compileMDX({
     source,
+    components: mdxComponents,
     options: {
       mdxOptions: {
         remarkPlugins: [remarkGfm],

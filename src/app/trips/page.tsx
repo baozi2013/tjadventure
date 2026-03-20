@@ -57,7 +57,7 @@ export default function TripsPage() {
                   alt={post.title}
                   fill
                   className="object-cover transition duration-500 group-hover:scale-[1.03]"
-                  sizes="(max-width: 1024px) 100vw, 33vw"
+                  sizes="(max-width: 639px) 100vw, (max-width: 1023px) 50vw, 33vw"
                 />
               </div>
               <div className="p-5">
