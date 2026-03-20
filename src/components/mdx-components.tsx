@@ -1,8 +1,5 @@
-import fs from "node:fs";
-import path from "node:path";
 import type { CSSProperties } from "react";
 import Image from "next/image";
-import sharp from "sharp";
 
 const DEFAULT_CONTENT_IMAGE_SIZES = "(max-width: 768px) 100vw, (max-width: 1280px) 92vw, 1100px";
 const FALLBACK_DIMENSIONS = { width: 1600, height: 1067 };
@@ -10,11 +7,6 @@ const OPTIMIZABLE_REMOTE_HOSTS = new Set([
   "res.cloudinary.com",
   "images.unsplash.com",
 ]);
-
-type LocalDimensions = {
-  width: number;
-  height: number;
-};
 
 type MdxImageProps = {
   src?: string;
@@ -26,8 +18,6 @@ type MdxImageProps = {
   style?: CSSProperties;
   loading?: "eager" | "lazy";
 };
-
-const localDimensionsCache = new Map<string, Promise<LocalDimensions | null>>();
 
 function parseDimension(value: number | string | undefined): number | undefined {
   if (typeof value === "number" && Number.isFinite(value) && value > 0) {
@@ -42,10 +32,6 @@ function parseDimension(value: number | string | undefined): number | undefined 
   }
 
   return undefined;
-}
-
-function normalizeLocalSrc(src: string) {
-  return src.split("#")[0].split("?")[0];
 }
 
 function isLocalPublicSrc(src: string) {
@@ -64,42 +50,7 @@ function isOptimizableRemoteSrc(src: string) {
   }
 }
 
-async function getLocalImageDimensions(src: string): Promise<LocalDimensions | null> {
-  const normalizedSrc = normalizeLocalSrc(src);
-  const cached = localDimensionsCache.get(normalizedSrc);
-  if (cached) {
-    return cached;
-  }
-
-  const task = (async () => {
-    const absolutePath = path.join(
-      process.cwd(),
-      "public",
-      normalizedSrc.replace(/^\/+/, ""),
-    );
-
-    if (!fs.existsSync(absolutePath)) {
-      return null;
-    }
-
-    try {
-      const metadata = await sharp(absolutePath).metadata();
-
-      if (metadata.width && metadata.height) {
-        return { width: metadata.width, height: metadata.height };
-      }
-    } catch {
-      return null;
-    }
-
-    return null;
-  })();
-
-  localDimensionsCache.set(normalizedSrc, task);
-  return task;
-}
-
-export async function MdxImage({
+export function MdxImage({
   src,
   alt = "",
   width,
@@ -116,32 +67,34 @@ export async function MdxImage({
   const shouldUseNextImage = isLocalPublicSrc(src) || isOptimizableRemoteSrc(src);
 
   if (!shouldUseNextImage) {
+    const fallbackStyle: CSSProperties = {
+      width: "100%",
+      height: "auto",
+      ...(style ?? {}),
+    };
+
     // eslint-disable-next-line @next/next/no-img-element
     return (
       <img
         src={src}
         alt={alt}
+        width={parseDimension(width)}
+        height={parseDimension(height)}
         className={className}
-        style={style}
+        style={fallbackStyle}
         loading={loading === "eager" ? "eager" : "lazy"}
         decoding="async"
       />
     );
   }
 
-  let finalWidth = parseDimension(width);
-  let finalHeight = parseDimension(height);
-
-  if ((!finalWidth || !finalHeight) && isLocalPublicSrc(src)) {
-    const localDimensions = await getLocalImageDimensions(src);
-    if (localDimensions) {
-      finalWidth ??= localDimensions.width;
-      finalHeight ??= localDimensions.height;
-    }
-  }
-
-  finalWidth ??= FALLBACK_DIMENSIONS.width;
-  finalHeight ??= FALLBACK_DIMENSIONS.height;
+  const finalWidth = parseDimension(width) ?? FALLBACK_DIMENSIONS.width;
+  const finalHeight = parseDimension(height) ?? FALLBACK_DIMENSIONS.height;
+  const imageStyle: CSSProperties = {
+    width: "100%",
+    height: "auto",
+    ...(style ?? {}),
+  };
 
   return (
     <Image
@@ -151,7 +104,7 @@ export async function MdxImage({
       height={finalHeight}
       sizes={sizes ?? DEFAULT_CONTENT_IMAGE_SIZES}
       className={className}
-      style={style}
+      style={imageStyle}
       quality={75}
       loading={loading === "eager" ? "eager" : "lazy"}
     />
