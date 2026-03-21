@@ -90,3 +90,21 @@ REMOTE_DIR='~/projects/tjadventure' ./scripts/deploy-nas.sh
 rsync -av --delete /Users/tianhengzhou/Documents/tjadventure/ tianheng@192.168.68.88:~/tjadventure/
 ssh tianheng@192.168.68.88 "cd ~/tjadventure && docker compose -f docker-compose.nas.yml up -d --build"
 ```
+
+## Nightly Pipeline (Media Hub + Draft Writer)
+
+Queue one share link:
+
+```bash
+npm run nightly:enqueue -- --link "https://photos.app.goo.gl/..."
+```
+
+Run worker:
+
+```bash
+npm run nightly:run
+```
+
+More details:
+
+- `docs/nightly-pipeline.md`

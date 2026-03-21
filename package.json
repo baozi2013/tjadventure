@@ -6,7 +6,10 @@
     "dev": "next dev --webpack",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "nightly:enqueue": "node scripts/nightly-enqueue.js",
+    "nightly:run": "node scripts/nightly-run.js",
+    "nightly:once": "node scripts/nightly-run.js --max-jobs 1"
   },
   "dependencies": {
     "gray-matter": "^4.0.3",
