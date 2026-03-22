@@ -4,6 +4,7 @@ This project now includes a first-night implementation of:
 
 1. Media Hub intake and manifest generation.
 2. Role-based travel post pipeline (`image-curator -> writer -> fact-checker -> publisher`).
+3. Admin console at `/admin/pipeline` for queue control and rerun/publish actions.
 
 ## What It Produces
 
@@ -52,12 +53,16 @@ Useful run flags:
 - If extractor is unavailable or fails, it still creates fallback artifacts and continues.
 - Publisher stage is off by default unless `--publish` is set on the job or run command.
 - Deploy uses existing `scripts/deploy-nas.sh`.
+- Worker launches from admin are detached background processes.
 
 ## Current Scope (Tonight MVP)
 
 - Media Hub:
   - Local image copy to `public/trips/<slug>/`
-  - Per-asset hash/size/dimensions/clarity score (clarity when `sharp` is available)
+  - Incremental sync by `sourceLink -> slug` mapping
+  - Hash-based dedupe and reuse on reruns
+  - Per-asset quality judgment (`accepted/rejected`) using blur/resolution/filesize signals
+  - Variant generation for accepted images (`webp` + `avif`, widths 1280/1920 when `sharp` is available)
   - Manifest + index output
 - AI pipeline:
   - Automatic draft generation

@@ -105,6 +105,12 @@ Run worker:
 npm run nightly:run
 ```
 
+Open admin console:
+
+```text
+/admin/pipeline
+```
+
 More details:
 
 - `docs/nightly-pipeline.md`

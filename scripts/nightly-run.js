@@ -41,6 +41,12 @@ try {
   sharp = null;
 }
 
+const QUALITY_MIN_CLARITY = 12;
+const QUALITY_MIN_PIXELS = 1_080_000; // ~1200x900
+const QUALITY_MIN_BYTES = 160_000;
+const VARIANT_WIDTHS = [1280, 1920];
+const VARIANT_FORMATS = ["webp", "avif"];
+
 function usage() {
   process.stdout.write(`
 Usage:
@@ -105,6 +111,106 @@ function sanitizeTitle(value, fallbackDate) {
   const clean = String(value || "").trim();
   if (clean.length > 0) return clean;
   return `旅行记录 ${fallbackDate}`;
+}
+
+function parseDayIndexFromPublicPath(publicPath) {
+  const match = String(publicPath || "").match(/\/day\d+-(\d+)\.[a-z0-9]+$/i);
+  if (!match) return null;
+  const parsed = Number.parseInt(match[1], 10);
+  return Number.isFinite(parsed) ? parsed : null;
+}
+
+function publicPathToAbsolute(publicPath) {
+  if (!publicPath.startsWith("/")) return null;
+  return path.join(ROOT_DIR, "public", publicPath.replace(/^\/+/, ""));
+}
+
+function normalizeAssetVariants(asset) {
+  if (!Array.isArray(asset.variants)) return [];
+  return asset.variants
+    .filter((item) => item && typeof item === "object" && typeof item.path === "string")
+    .map((item) => ({
+      path: item.path,
+      format: typeof item.format === "string" ? item.format : "",
+      width: typeof item.width === "number" ? item.width : null,
+      generatedAt: typeof item.generatedAt === "string" ? item.generatedAt : "",
+    }));
+}
+
+function buildQuality(meta) {
+  const reasons = [];
+  if (typeof meta.clarityScore === "number" && meta.clarityScore < QUALITY_MIN_CLARITY) {
+    reasons.push("blur");
+  }
+
+  if (
+    typeof meta.width === "number" &&
+    typeof meta.height === "number" &&
+    meta.width * meta.height < QUALITY_MIN_PIXELS
+  ) {
+    reasons.push("low-resolution");
+  }
+
+  if (typeof meta.bytes === "number" && meta.bytes < QUALITY_MIN_BYTES) {
+    reasons.push("tiny-file");
+  }
+
+  const status = reasons.length > 0 ? "rejected" : "accepted";
+  const clarityPart = typeof meta.clarityScore === "number" ? meta.clarityScore * 3 : 0;
+  const pixelPart =
+    typeof meta.width === "number" && typeof meta.height === "number"
+      ? Math.min(35, (meta.width * meta.height) / 180_000)
+      : 0;
+  const sizePart = typeof meta.bytes === "number" ? Math.min(20, meta.bytes / 250_000) : 0;
+  const score = Number(Math.max(0, Math.min(100, clarityPart + pixelPart + sizePart)).toFixed(2));
+
+  return {
+    status,
+    score,
+    reasons,
+    checkedAt: nowIso(),
+  };
+}
+
+async function ensureVariants({
+  slug,
+  sourceAbsolutePath,
+  sourcePublicPath,
+}) {
+  if (!sharp) {
+    return [];
+  }
+
+  const sourceName = path.basename(sourcePublicPath, path.extname(sourcePublicPath));
+  const variantDir = path.join(ROOT_DIR, "public", "trips", slug, "_variants");
+  await ensureDir(variantDir);
+
+  const variants = [];
+  for (const width of VARIANT_WIDTHS) {
+    for (const format of VARIANT_FORMATS) {
+      const fileName = `${sourceName}-w${width}.${format}`;
+      const absoluteVariant = path.join(variantDir, fileName);
+      const publicVariant = `/trips/${slug}/_variants/${fileName}`;
+
+      // Only generate once; reuse on subsequent incremental sync runs.
+      if (!(await pathExists(absoluteVariant))) {
+        await sharp(sourceAbsolutePath)
+          .rotate()
+          .resize({ width, withoutEnlargement: true })
+          .toFormat(format, format === "avif" ? { quality: 52 } : { quality: 72 })
+          .toFile(absoluteVariant);
+      }
+
+      variants.push({
+        path: publicVariant,
+        format,
+        width,
+        generatedAt: nowIso(),
+      });
+    }
+  }
+
+  return variants;
 }
 
 async function inspectImage(filePath) {
@@ -310,12 +416,86 @@ async function runMediaHub(job) {
 
   const albumTitle = String(album.title || "").trim();
   if (!job.output.slug) {
-    job.output.slug = buildSlug(job, albumTitle);
+    const sourceIndexPath = path.join(MEDIA_HUB_DIR, "source-index.json");
+    const sourceIndex = await readJson(sourceIndexPath, { links: {} });
+    const linked = sourceIndex.links?.[job.source.link];
+    if (linked && typeof linked.slug === "string" && linked.slug.trim().length > 0) {
+      job.output.slug = linked.slug.trim();
+    } else {
+      job.output.slug = buildSlug(job, albumTitle);
+    }
   }
 
   const publicTripDir = path.join(ROOT_DIR, "public", "trips", job.output.slug);
   await ensureDir(publicTripDir);
   job.output.publicTripDir = publicTripDir;
+
+  const manifestPath = path.join(MEDIA_HUB_DIR, `${job.output.slug}.json`);
+  const previousManifest = await readJson(manifestPath, {
+    assets: [],
+  });
+  const previousAssetsRaw = Array.isArray(previousManifest.assets)
+    ? previousManifest.assets
+    : [];
+
+  const existingAssets = [];
+  const existingHashes = new Map();
+  let maxAssetIndex = 0;
+
+  for (const previousAsset of previousAssetsRaw) {
+    if (!previousAsset || typeof previousAsset !== "object") continue;
+    const kind = previousAsset.kind === "remote" ? "remote" : "local";
+    const publicPath = typeof previousAsset.publicPath === "string"
+      ? previousAsset.publicPath
+      : "";
+    if (!publicPath) continue;
+
+    const hashSha1 = typeof previousAsset.hashSha1 === "string"
+      ? previousAsset.hashSha1
+      : "";
+    if (kind === "local" && !hashSha1) {
+      continue;
+    }
+
+    const normalized = {
+      ...previousAsset,
+      kind,
+      publicPath,
+      hashSha1,
+      variants: normalizeAssetVariants(previousAsset),
+      syncStatus: "existing",
+    };
+
+    if (kind === "local") {
+      const parsed = parseDayIndexFromPublicPath(publicPath);
+      if (typeof parsed === "number") {
+        maxAssetIndex = Math.max(maxAssetIndex, parsed);
+      }
+
+      if (!existingHashes.has(hashSha1)) {
+        existingHashes.set(hashSha1, normalized);
+        existingAssets.push(normalized);
+      }
+      continue;
+    }
+
+    existingAssets.push(normalized);
+  }
+
+  // Backfill missing quality info for previously synced local assets.
+  for (const asset of existingAssets) {
+    if (asset.kind !== "local") continue;
+    if (asset.quality && typeof asset.quality.status === "string") continue;
+
+    const absolute = publicPathToAbsolute(asset.publicPath);
+    if (!absolute || !(await pathExists(absolute))) continue;
+    const meta = await inspectImage(absolute);
+    asset.bytes = meta.bytes;
+    asset.width = meta.width;
+    asset.height = meta.height;
+    asset.clarityScore = meta.clarityScore;
+    asset.quality = buildQuality(meta);
+  }
 
   const rawEntries = await fsp.readdir(job.artifacts.downloadsDir, {
     withFileTypes: true,
@@ -326,35 +506,76 @@ async function runMediaHub(job) {
     .filter((filePath) => isImageFile(filePath))
     .sort((a, b) => a.localeCompare(b));
 
-  const localAssets = [];
-  for (let index = 0; index < downloaded.length; index += 1) {
-    const sourcePath = downloaded[index];
+  const runHashes = new Set();
+  let reusedAssetCount = 0;
+  let newAssetCount = 0;
+  let skippedDuplicateCount = 0;
+  const runAssets = [];
+
+  for (const sourcePath of downloaded) {
+    const hash = await sha1File(sourcePath);
+    if (runHashes.has(hash)) {
+      skippedDuplicateCount += 1;
+      continue;
+    }
+    runHashes.add(hash);
+
+    const existing = existingHashes.get(hash);
+    if (existing) {
+      existing.syncStatus = "reused";
+      runAssets.push(existing);
+      reusedAssetCount += 1;
+      continue;
+    }
+
     const ext = normalizeExt(sourcePath);
-    const fileName = `day1-${index + 1}${ext}`;
+    maxAssetIndex += 1;
+    const fileName = `day1-${maxAssetIndex}${ext}`;
+    const publicPath = `/trips/${job.output.slug}/${fileName}`;
     const destinationPath = path.join(publicTripDir, fileName);
     await fsp.copyFile(sourcePath, destinationPath);
 
     const meta = await inspectImage(destinationPath);
-    localAssets.push({
-      id: `local-${index + 1}`,
+    const quality = buildQuality(meta);
+    const variants = quality.status === "accepted"
+      ? await ensureVariants({
+          slug: job.output.slug,
+          sourceAbsolutePath: destinationPath,
+          sourcePublicPath: publicPath,
+        })
+      : [];
+
+    const newAsset = {
+      id: `local-${maxAssetIndex}`,
       kind: "local",
       sourcePath,
-      publicPath: `/trips/${job.output.slug}/${fileName}`,
+      publicPath,
       bytes: meta.bytes,
       width: meta.width,
       height: meta.height,
       clarityScore: meta.clarityScore,
-      hashSha1: await sha1File(destinationPath),
-    });
+      hashSha1: hash,
+      quality,
+      variants,
+      syncStatus: "new",
+    };
+
+    existingHashes.set(hash, newAsset);
+    existingAssets.push(newAsset);
+    runAssets.push(newAsset);
+    newAssetCount += 1;
   }
 
-  const remoteAssets = [];
-  if (localAssets.length === 0) {
+  let assets = existingAssets.filter((asset) => asset.kind === "local");
+  if (assets.length === 0) {
+    const remoteAssets = [];
     const items = pickAlbumItems(album);
     let remoteIndex = 1;
+    const seenUrls = new Set();
     for (const item of items) {
       const url = pickItemUrl(item);
-      if (!url) continue;
+      if (!url || seenUrls.has(url)) continue;
+      seenUrls.add(url);
       remoteAssets.push({
         id: `remote-${remoteIndex}`,
         kind: "remote",
@@ -364,12 +585,22 @@ async function runMediaHub(job) {
         height: null,
         clarityScore: null,
         hashSha1: "",
+        quality: {
+          status: "accepted",
+          score: 50,
+          reasons: [],
+          checkedAt: nowIso(),
+        },
+        variants: [],
+        syncStatus: "new",
       });
       remoteIndex += 1;
     }
+    assets = remoteAssets;
   }
 
-  const assets = localAssets.length > 0 ? localAssets : remoteAssets;
+  const acceptedAssets = assets.filter((asset) => asset.quality?.status !== "rejected");
+  const rejectedAssets = assets.length - acceptedAssets.length;
 
   const manifest = {
     generatedAt: nowIso(),
@@ -377,11 +608,33 @@ async function runMediaHub(job) {
     slug: job.output.slug,
     provider: job.source.provider,
     sourceLink: job.source.link,
+    sync: {
+      incremental: true,
+      previousAssetCount: previousAssetsRaw.length,
+      runAssetCount: runAssets.length,
+      newAssetCount,
+      reusedAssetCount,
+      skippedDuplicateCount,
+      totalAssetCount: assets.length,
+      acceptedAssetCount: acceptedAssets.length,
+      rejectedAssetCount: rejectedAssets,
+    },
     assets,
   };
 
   await writeJsonAtomic(job.artifacts.mediaManifest, manifest);
-  await writeJsonAtomic(path.join(MEDIA_HUB_DIR, `${job.output.slug}.json`), manifest);
+  await writeJsonAtomic(manifestPath, manifest);
+
+  const sourceIndexPath = path.join(MEDIA_HUB_DIR, "source-index.json");
+  const sourceIndex = await readJson(sourceIndexPath, { updatedAt: "", links: {} });
+  sourceIndex.updatedAt = nowIso();
+  sourceIndex.links[job.source.link] = {
+    slug: job.output.slug,
+    updatedAt: nowIso(),
+    jobId: job.id,
+    provider: job.source.provider,
+  };
+  await writeJsonAtomic(sourceIndexPath, sourceIndex);
 
   const hubIndexPath = path.join(MEDIA_HUB_DIR, "index.json");
   const hubIndex = await readJson(hubIndexPath, { updatedAt: "", trips: {} });
@@ -391,20 +644,27 @@ async function runMediaHub(job) {
     jobId: job.id,
     sourceLink: job.source.link,
     assetCount: assets.length,
-    localAssetCount: localAssets.length,
+    acceptedAssetCount: acceptedAssets.length,
+    newAssetCount,
+    reusedAssetCount,
+    skippedDuplicateCount,
   };
   await writeJsonAtomic(hubIndexPath, hubIndex);
 
   return {
     ok: true,
-    message: `manifest created with ${assets.length} assets (${localAssets.length} local)`,
-    assets,
+    message: `manifest updated: total=${assets.length}, new=${newAssetCount}, reused=${reusedAssetCount}, rejected=${rejectedAssets}`,
+    assets: acceptedAssets.length > 0 ? acceptedAssets : assets,
   };
 }
 
 async function runImageCurator(job, mediaResult) {
   const assets = Array.isArray(mediaResult.assets) ? mediaResult.assets : [];
   const ranked = [...assets].sort((a, b) => {
+    const qualityA = typeof a.quality?.score === "number" ? a.quality.score : 0;
+    const qualityB = typeof b.quality?.score === "number" ? b.quality.score : 0;
+    if (qualityA !== qualityB) return qualityB - qualityA;
+
     const scoreA = typeof a.clarityScore === "number" ? a.clarityScore : 0;
     const scoreB = typeof b.clarityScore === "number" ? b.clarityScore : 0;
     if (scoreA !== scoreB) return scoreB - scoreA;
