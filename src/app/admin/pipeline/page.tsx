@@ -2,6 +2,7 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import {
+  getPipelineRuntimeSupport,
   readHubIndex,
   readJobLog,
   readJobs,
@@ -82,13 +83,16 @@ async function enqueueAction(formData: FormData) {
 async function runWorkerAction(formData: FormData) {
   "use server";
   const maxJobs = numberFromForm(formData.get("maxJobs"), 3);
-  runNightlyWorkerDetached({
+  const result = runNightlyWorkerDetached({
     maxJobs,
     retryFailed: boolFromForm(formData.get("retryFailed")),
     publish: boolFromForm(formData.get("publish")),
     deploy: boolFromForm(formData.get("deploy")),
     overwritePost: boolFromForm(formData.get("overwritePost")),
   });
+  if (!result.ok) {
+    redirect(encodeMessage("error", result.message || "worker start failed"));
+  }
 
   revalidatePath("/admin/pipeline");
   redirect(encodeMessage("ok", "Worker started in background."));
@@ -147,6 +151,7 @@ export default async function PipelineAdminPage({
   const level = single(params.level);
   const message = single(params.msg);
   const focusId = single(params.job);
+  const runtimeSupport = getPipelineRuntimeSupport();
 
   const [jobs, hubIndex] = await Promise.all([readJobs(), readHubIndex()]);
   const sortedJobs = [...jobs].sort((a, b) => b.createdAt.localeCompare(a.createdAt));
@@ -194,33 +199,39 @@ export default async function PipelineAdminPage({
         </div>
       ) : null}
 
+      {runtimeSupport.readOnly ? (
+        <div className="mb-4 rounded-xl border border-amber-500/40 bg-amber-50 px-4 py-3 text-sm text-amber-800">
+          Read-only runtime detected. This hosted environment can view status, but enqueue/worker/requeue actions are disabled.
+        </div>
+      ) : null}
+
       <section className="mb-6 grid gap-4 lg:grid-cols-2">
-        <form action={enqueueAction} className="rounded-2xl border border-black/10 bg-white p-5 dark:border-white/10 dark:bg-neutral-950">
+        <form action={enqueueAction} className={`rounded-2xl border border-black/10 bg-white p-5 dark:border-white/10 dark:bg-neutral-950 ${runtimeSupport.readOnly ? "opacity-60" : ""}`}>
           <h2 className="text-lg font-semibold">Enqueue Link</h2>
           <div className="mt-3 space-y-2 text-sm">
-            <input name="link" placeholder="https://photos.app.goo.gl/..." required className="w-full rounded-lg border border-black/15 bg-white px-3 py-2 dark:border-white/20 dark:bg-neutral-900" />
-            <input name="title" placeholder="Title hint (optional)" className="w-full rounded-lg border border-black/15 bg-white px-3 py-2 dark:border-white/20 dark:bg-neutral-900" />
-            <input name="date" placeholder="Date hint YYYY-MM-DD" className="w-full rounded-lg border border-black/15 bg-white px-3 py-2 dark:border-white/20 dark:bg-neutral-900" />
+            <input name="link" placeholder="https://photos.app.goo.gl/..." required disabled={runtimeSupport.readOnly} className="w-full rounded-lg border border-black/15 bg-white px-3 py-2 disabled:cursor-not-allowed disabled:opacity-70 dark:border-white/20 dark:bg-neutral-900" />
+            <input name="title" placeholder="Title hint (optional)" disabled={runtimeSupport.readOnly} className="w-full rounded-lg border border-black/15 bg-white px-3 py-2 disabled:cursor-not-allowed disabled:opacity-70 dark:border-white/20 dark:bg-neutral-900" />
+            <input name="date" placeholder="Date hint YYYY-MM-DD" disabled={runtimeSupport.readOnly} className="w-full rounded-lg border border-black/15 bg-white px-3 py-2 disabled:cursor-not-allowed disabled:opacity-70 dark:border-white/20 dark:bg-neutral-900" />
             <div className="grid grid-cols-2 gap-2">
-              <input name="sampleCount" defaultValue="30" className="rounded-lg border border-black/15 bg-white px-3 py-2 dark:border-white/20 dark:bg-neutral-900" />
-              <input name="downloadCount" defaultValue="24" className="rounded-lg border border-black/15 bg-white px-3 py-2 dark:border-white/20 dark:bg-neutral-900" />
+              <input name="sampleCount" defaultValue="30" disabled={runtimeSupport.readOnly} className="rounded-lg border border-black/15 bg-white px-3 py-2 disabled:cursor-not-allowed disabled:opacity-70 dark:border-white/20 dark:bg-neutral-900" />
+              <input name="downloadCount" defaultValue="24" disabled={runtimeSupport.readOnly} className="rounded-lg border border-black/15 bg-white px-3 py-2 disabled:cursor-not-allowed disabled:opacity-70 dark:border-white/20 dark:bg-neutral-900" />
             </div>
-            <label className="flex items-center gap-2 text-xs"><input type="checkbox" name="publish" /> Auto publish</label>
-            <label className="flex items-center gap-2 text-xs"><input type="checkbox" name="deploy" /> Auto deploy</label>
-            <label className="flex items-center gap-2 text-xs"><input type="checkbox" name="overwritePost" /> Overwrite existing post</label>
-            <button type="submit" className="mt-1 rounded-lg bg-neutral-900 px-3 py-2 text-white dark:bg-white dark:text-black">Enqueue</button>
+            <label className="flex items-center gap-2 text-xs"><input type="checkbox" name="publish" disabled={runtimeSupport.readOnly} /> Auto publish</label>
+            <label className="flex items-center gap-2 text-xs"><input type="checkbox" name="deploy" disabled={runtimeSupport.readOnly} /> Auto deploy</label>
+            <label className="flex items-center gap-2 text-xs"><input type="checkbox" name="overwritePost" disabled={runtimeSupport.readOnly} /> Overwrite existing post</label>
+            <button type="submit" disabled={runtimeSupport.readOnly} className="mt-1 rounded-lg bg-neutral-900 px-3 py-2 text-white disabled:cursor-not-allowed disabled:opacity-60 dark:bg-white dark:text-black">Enqueue</button>
           </div>
         </form>
 
-        <form action={runWorkerAction} className="rounded-2xl border border-black/10 bg-white p-5 dark:border-white/10 dark:bg-neutral-950">
+        <form action={runWorkerAction} className={`rounded-2xl border border-black/10 bg-white p-5 dark:border-white/10 dark:bg-neutral-950 ${runtimeSupport.readOnly ? "opacity-60" : ""}`}>
           <h2 className="text-lg font-semibold">Run Worker</h2>
           <div className="mt-3 space-y-2 text-sm">
-            <input name="maxJobs" defaultValue="3" className="w-full rounded-lg border border-black/15 bg-white px-3 py-2 dark:border-white/20 dark:bg-neutral-900" />
-            <label className="flex items-center gap-2 text-xs"><input type="checkbox" name="retryFailed" /> Include failed jobs</label>
-            <label className="flex items-center gap-2 text-xs"><input type="checkbox" name="publish" /> Force publish override</label>
-            <label className="flex items-center gap-2 text-xs"><input type="checkbox" name="deploy" /> Force deploy override</label>
-            <label className="flex items-center gap-2 text-xs"><input type="checkbox" name="overwritePost" /> Force overwrite post</label>
-            <button type="submit" className="mt-1 rounded-lg bg-neutral-900 px-3 py-2 text-white dark:bg-white dark:text-black">Start Worker (Background)</button>
+            <input name="maxJobs" defaultValue="3" disabled={runtimeSupport.readOnly} className="w-full rounded-lg border border-black/15 bg-white px-3 py-2 disabled:cursor-not-allowed disabled:opacity-70 dark:border-white/20 dark:bg-neutral-900" />
+            <label className="flex items-center gap-2 text-xs"><input type="checkbox" name="retryFailed" disabled={runtimeSupport.readOnly} /> Include failed jobs</label>
+            <label className="flex items-center gap-2 text-xs"><input type="checkbox" name="publish" disabled={runtimeSupport.readOnly} /> Force publish override</label>
+            <label className="flex items-center gap-2 text-xs"><input type="checkbox" name="deploy" disabled={runtimeSupport.readOnly} /> Force deploy override</label>
+            <label className="flex items-center gap-2 text-xs"><input type="checkbox" name="overwritePost" disabled={runtimeSupport.readOnly} /> Force overwrite post</label>
+            <button type="submit" disabled={runtimeSupport.readOnly} className="mt-1 rounded-lg bg-neutral-900 px-3 py-2 text-white disabled:cursor-not-allowed disabled:opacity-60 dark:bg-white dark:text-black">Start Worker (Background)</button>
           </div>
         </form>
       </section>
@@ -247,24 +258,24 @@ export default async function PipelineAdminPage({
                 <div className="mt-2 flex flex-wrap gap-2">
                   <form action={requeueAction}>
                     <input type="hidden" name="jobId" value={job.id} />
-                    <button type="submit" className="rounded-md border border-black/15 px-2 py-1 text-xs dark:border-white/20">Requeue</button>
+                    <button type="submit" disabled={runtimeSupport.readOnly} className="rounded-md border border-black/15 px-2 py-1 text-xs disabled:cursor-not-allowed disabled:opacity-60 dark:border-white/20">Requeue</button>
                   </form>
                   <form action={rerunJobAction}>
                     <input type="hidden" name="jobId" value={job.id} />
-                    <button type="submit" className="rounded-md border border-black/15 px-2 py-1 text-xs dark:border-white/20">Rerun</button>
+                    <button type="submit" disabled={runtimeSupport.readOnly} className="rounded-md border border-black/15 px-2 py-1 text-xs disabled:cursor-not-allowed disabled:opacity-60 dark:border-white/20">Rerun</button>
                   </form>
                   <form action={rerunJobAction}>
                     <input type="hidden" name="jobId" value={job.id} />
                     <input type="hidden" name="publish" value="true" />
                     <input type="hidden" name="overwritePost" value="true" />
-                    <button type="submit" className="rounded-md border border-black/15 px-2 py-1 text-xs dark:border-white/20">Publish</button>
+                    <button type="submit" disabled={runtimeSupport.readOnly} className="rounded-md border border-black/15 px-2 py-1 text-xs disabled:cursor-not-allowed disabled:opacity-60 dark:border-white/20">Publish</button>
                   </form>
                   <form action={rerunJobAction}>
                     <input type="hidden" name="jobId" value={job.id} />
                     <input type="hidden" name="publish" value="true" />
                     <input type="hidden" name="deploy" value="true" />
                     <input type="hidden" name="overwritePost" value="true" />
-                    <button type="submit" className="rounded-md border border-black/15 px-2 py-1 text-xs dark:border-white/20">Publish + Deploy</button>
+                    <button type="submit" disabled={runtimeSupport.readOnly} className="rounded-md border border-black/15 px-2 py-1 text-xs disabled:cursor-not-allowed disabled:opacity-60 dark:border-white/20">Publish + Deploy</button>
                   </form>
                 </div>
               </article>

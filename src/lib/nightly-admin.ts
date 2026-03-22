@@ -12,6 +12,9 @@ export const NIGHTLY_MEDIA_HUB_DIR = path.join(NIGHTLY_DATA_DIR, "media-hub");
 export const NIGHTLY_HUB_INDEX_PATH = path.join(NIGHTLY_MEDIA_HUB_DIR, "index.json");
 export const NIGHTLY_ARTIFACTS_DIR = path.join(NIGHTLY_PIPELINE_DIR, "artifacts");
 
+const READ_ONLY_RUNTIME_REASON =
+  "Current runtime is read-only (e.g. Vercel serverless). Local pipeline file writes and detached workers are unavailable.";
+
 type StepStatus = "queued" | "running" | "completed" | "failed" | "skipped";
 
 export type JobStep = {
@@ -81,6 +84,11 @@ export type HubIndex = {
   >;
 };
 
+export type PipelineRuntimeSupport = {
+  readOnly: boolean;
+  reason: string | null;
+};
+
 function nowIso() {
   return new Date().toISOString();
 }
@@ -88,6 +96,18 @@ function nowIso() {
 async function ensureNightlyDirs() {
   await fsp.mkdir(NIGHTLY_ARTIFACTS_DIR, { recursive: true });
   await fsp.mkdir(NIGHTLY_MEDIA_HUB_DIR, { recursive: true });
+}
+
+function isReadOnlyRuntime() {
+  // Vercel serverless runtime does not allow arbitrary writes under process.cwd().
+  return process.env.VERCEL === "1";
+}
+
+export function getPipelineRuntimeSupport(): PipelineRuntimeSupport {
+  if (isReadOnlyRuntime()) {
+    return { readOnly: true, reason: READ_ONLY_RUNTIME_REASON };
+  }
+  return { readOnly: false, reason: null };
 }
 
 async function readJson<T>(filePath: string, fallback: T): Promise<T> {
@@ -105,7 +125,7 @@ async function writeJson(filePath: string, data: unknown) {
 }
 
 export async function readJobs(): Promise<NightlyJob[]> {
-  await ensureNightlyDirs();
+  // Keep reads resilient on read-only runtimes.
   return readJson<NightlyJob[]>(NIGHTLY_JOBS_PATH, []);
 }
 
@@ -114,7 +134,7 @@ export async function writeJobs(jobs: NightlyJob[]) {
 }
 
 export async function readHubIndex(): Promise<HubIndex> {
-  await ensureNightlyDirs();
+  // Keep reads resilient on read-only runtimes.
   return readJson<HubIndex>(NIGHTLY_HUB_INDEX_PATH, { updatedAt: "", trips: {} });
 }
 
@@ -142,6 +162,11 @@ function resetSteps(steps: Record<string, JobStep>): Record<string, JobStep> {
 }
 
 export async function requeueJob(jobId: string) {
+  if (isReadOnlyRuntime()) {
+    return { ok: false, message: READ_ONLY_RUNTIME_REASON };
+  }
+
+  await ensureNightlyDirs();
   const jobs = await readJobs();
   const index = jobs.findIndex((job) => job.id === jobId);
   if (index < 0) {
@@ -176,6 +201,15 @@ function toArgs(data: Record<string, string | number | boolean | undefined>) {
 }
 
 export function runScriptSync(scriptName: string, args: string[] = []) {
+  if (isReadOnlyRuntime()) {
+    return {
+      ok: false,
+      code: 1,
+      stdout: "",
+      stderr: READ_ONLY_RUNTIME_REASON,
+    };
+  }
+
   const scriptPath = path.join(NIGHTLY_ROOT, "scripts", scriptName);
   const result = spawnSync(process.execPath, [scriptPath, ...args], {
     cwd: NIGHTLY_ROOT,
@@ -220,6 +254,14 @@ export function runNightlyWorkerDetached(params: {
   deploy?: boolean;
   overwritePost?: boolean;
 }) {
+  if (isReadOnlyRuntime()) {
+    return {
+      ok: false,
+      pid: 0,
+      message: READ_ONLY_RUNTIME_REASON,
+    };
+  }
+
   const scriptPath = path.join(NIGHTLY_ROOT, "scripts", "nightly-run.js");
   const args = toArgs({
     "job-id": params.jobId,
@@ -239,5 +281,6 @@ export function runNightlyWorkerDetached(params: {
   return {
     ok: true,
     pid: child.pid,
+    message: "",
   };
 }
