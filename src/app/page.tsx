@@ -30,9 +30,6 @@ export default function Home() {
         <Link href="/trips" className="rounded-full border border-transparent px-3 py-1.5 transition hover:border-black/15 hover:bg-neutral-100 hover:text-neutral-900 dark:hover:border-white/20 dark:hover:bg-neutral-800 dark:hover:text-white">
           All Trips
         </Link>
-        <Link href="/admin/pipeline" className="rounded-full border border-transparent px-3 py-1.5 transition hover:border-black/15 hover:bg-neutral-100 hover:text-neutral-900 dark:hover:border-white/20 dark:hover:bg-neutral-800 dark:hover:text-white">
-          Pipeline
-        </Link>
       </nav>
 
       <header className="mb-10 border-b border-black/10 pb-8 dark:border-white/10">
