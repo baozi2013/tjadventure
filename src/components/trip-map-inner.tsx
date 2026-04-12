@@ -24,8 +24,6 @@ const DEFAULT_MARKER_ICON = L.icon({
   shadowSize: [41, 41],
 });
 
-L.Marker.prototype.options.icon = DEFAULT_MARKER_ICON;
-
 type TripMapInnerProps = {
   locations: TripLocation[];
 };
@@ -70,6 +68,8 @@ function getCenter(points: LatLngTuple[]): LatLngTuple {
 }
 
 export function TripMapInner({ locations }: TripMapInnerProps) {
+  const markerIcon = useMemo(() => DEFAULT_MARKER_ICON, []);
+
   const points = useMemo<LatLngTuple[]>(
     () => locations.map((location) => [location.lat, location.lng]),
     [locations],
@@ -97,7 +97,11 @@ export function TripMapInner({ locations }: TripMapInnerProps) {
         ) : null}
 
         {locations.map((location, index) => (
-          <Marker key={location.name + String(location.lat) + String(location.lng)} position={[location.lat, location.lng]}>
+          <Marker
+            key={location.name + String(location.lat) + String(location.lng)}
+            position={[location.lat, location.lng]}
+            icon={markerIcon}
+          >
             <Popup>
               <div className="text-sm">
                 <p className="font-semibold">{index + 1}. {location.name}</p>
