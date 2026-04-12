@@ -75,6 +75,17 @@ function validateCoverImage(rawCoverImage: string, filePath: string): string {
   failFrontmatter(filePath, `"coverImage" must be an absolute path (starting with "/") or an http(s) URL.`);
 }
 
+function validateLocationImage(rawImage: string, filePath: string, index: number): string {
+  if (rawImage.startsWith("/") || /^https?:\/\//.test(rawImage)) {
+    return rawImage;
+  }
+
+  failFrontmatter(
+    filePath,
+    `"locations[${index}].image" must be an absolute path (starting with "/") or an http(s) URL.`,
+  );
+}
+
 function readOptionalTags(frontmatter: RawFrontmatter, filePath: string): string[] | undefined {
   const value = frontmatter.tags;
   if (value == null) return undefined;
@@ -145,11 +156,17 @@ function readOptionalLocations(frontmatter: RawFrontmatter, filePath: string): T
       failFrontmatter(filePath, `"locations[${index}].note" must be a non-empty string when provided.`);
     }
 
+    const image = item.image;
+    if (image != null && (typeof image !== "string" || image.trim().length === 0)) {
+      failFrontmatter(filePath, `"locations[${index}].image" must be a non-empty string when provided.`);
+    }
+
     return {
       name: name.trim(),
       lat: readLocationNumber(item, "lat", filePath, index),
       lng: readLocationNumber(item, "lng", filePath, index),
       note: typeof note === "string" ? note.trim() : undefined,
+      image: typeof image === "string" ? validateLocationImage(image.trim(), filePath, index) : undefined,
     };
   });
 

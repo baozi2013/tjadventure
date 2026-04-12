@@ -3,4 +3,5 @@ export type TripLocation = {
   lat: number;
   lng: number;
   note?: string;
+  image?: string;
 };

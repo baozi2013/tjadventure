@@ -18,9 +18,10 @@ const TripMapInner = dynamic(
 type TripMapProps = {
   title: string;
   locations: TripLocation[];
+  fallbackImage: string;
 };
 
-export function TripMap({ title, locations }: TripMapProps) {
+export function TripMap({ title, locations, fallbackImage }: TripMapProps) {
   if (locations.length === 0) {
     return null;
   }
@@ -36,7 +37,7 @@ export function TripMap({ title, locations }: TripMapProps) {
         </div>
       </div>
 
-      <TripMapInner locations={locations} />
+      <TripMapInner locations={locations} fallbackImage={fallbackImage} />
 
       <ol className="mt-4 grid gap-2 text-sm text-neutral-700 dark:text-neutral-200 sm:grid-cols-2">
         {locations.map((location, index) => (

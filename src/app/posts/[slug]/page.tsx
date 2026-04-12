@@ -69,7 +69,11 @@ export default async function PostDetail({ params }: Params) {
             />
           </div>
 
-          <TripMap title={post.frontmatter.title} locations={post.locations} />
+          <TripMap
+            title={post.frontmatter.title}
+            locations={post.locations}
+            fallbackImage={post.frontmatter.coverImage}
+          />
 
           <div className="mdx-content max-w-none">
             {content}

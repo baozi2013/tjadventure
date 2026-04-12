@@ -4,7 +4,6 @@ import { useEffect, useMemo } from "react";
 import {
   MapContainer,
   Marker,
-  Polyline,
   Popup,
   TileLayer,
   useMap,
@@ -12,20 +11,9 @@ import {
 import L from "leaflet";
 import type { TripLocation } from "@/types/posts";
 
-const LEAFLET_IMAGE_BASE = "https://unpkg.com/leaflet@1.9.4/dist/images";
-
-const DEFAULT_MARKER_ICON = L.icon({
-  iconRetinaUrl: `${LEAFLET_IMAGE_BASE}/marker-icon-2x.png`,
-  iconUrl: `${LEAFLET_IMAGE_BASE}/marker-icon.png`,
-  shadowUrl: `${LEAFLET_IMAGE_BASE}/marker-shadow.png`,
-  iconSize: [25, 41],
-  iconAnchor: [12, 41],
-  popupAnchor: [1, -34],
-  shadowSize: [41, 41],
-});
-
 type TripMapInnerProps = {
   locations: TripLocation[];
+  fallbackImage: string;
 };
 
 type LatLngTuple = [number, number];
@@ -67,8 +55,34 @@ function getCenter(points: LatLngTuple[]): LatLngTuple {
   return [latTotal / points.length, lngTotal / points.length];
 }
 
-export function TripMapInner({ locations }: TripMapInnerProps) {
-  const markerIcon = useMemo(() => DEFAULT_MARKER_ICON, []);
+function escapeHtml(value: string) {
+  return value
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
+}
+
+function createPhotoMarkerIcon(imageUrl: string) {
+  const safeImageUrl = escapeHtml(imageUrl);
+  return L.divIcon({
+    className: "",
+    iconSize: [42, 42],
+    iconAnchor: [21, 21],
+    popupAnchor: [0, -22],
+    html:
+      `<span style="display:block;width:42px;height:42px;border-radius:9999px;overflow:hidden;border:2px solid #ffffff;box-shadow:0 6px 16px rgba(15,23,42,0.28);background:#e5e7eb;">` +
+      `<img src="${safeImageUrl}" alt="" style="display:block;width:100%;height:100%;object-fit:cover;" />` +
+      `</span>`,
+  });
+}
+
+export function TripMapInner({ locations, fallbackImage }: TripMapInnerProps) {
+  const markerIcons = useMemo(
+    () => locations.map((location) => createPhotoMarkerIcon(location.image ?? fallbackImage)),
+    [locations, fallbackImage],
+  );
 
   const points = useMemo<LatLngTuple[]>(
     () => locations.map((location) => [location.lat, location.lng]),
@@ -92,15 +106,11 @@ export function TripMapInner({ locations }: TripMapInnerProps) {
 
         <FitLocations points={points} />
 
-        {points.length > 1 ? (
-          <Polyline positions={points} pathOptions={{ color: "#2563eb", weight: 3, opacity: 0.75 }} />
-        ) : null}
-
         {locations.map((location, index) => (
           <Marker
             key={location.name + String(location.lat) + String(location.lng)}
             position={[location.lat, location.lng]}
-            icon={markerIcon}
+            icon={markerIcons[index]}
           >
             <Popup>
               <div className="text-sm">
