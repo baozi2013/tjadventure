@@ -10,15 +10,14 @@ import {
   useMap,
 } from "react-leaflet";
 import L from "leaflet";
-import markerIcon2x from "leaflet/dist/images/marker-icon-2x.png";
-import markerIcon from "leaflet/dist/images/marker-icon.png";
-import markerShadow from "leaflet/dist/images/marker-shadow.png";
 import type { TripLocation } from "@/types/posts";
 
+const LEAFLET_IMAGE_BASE = "https://unpkg.com/leaflet@1.9.4/dist/images";
+
 const DEFAULT_MARKER_ICON = L.icon({
-  iconRetinaUrl: markerIcon2x.src,
-  iconUrl: markerIcon.src,
-  shadowUrl: markerShadow.src,
+  iconRetinaUrl: `${LEAFLET_IMAGE_BASE}/marker-icon-2x.png`,
+  iconUrl: `${LEAFLET_IMAGE_BASE}/marker-icon.png`,
+  shadowUrl: `${LEAFLET_IMAGE_BASE}/marker-shadow.png`,
   iconSize: [25, 41],
   iconAnchor: [12, 41],
   popupAnchor: [1, -34],
