@@ -1,0 +1,128 @@
+import type { TripLocation } from "@/types/posts";
+
+type TripLocationsBySlug = Record<string, TripLocation[]>;
+
+export const slugFallbackLocations: TripLocationsBySlug = {
+  "big-sur-2022": [
+    { name: "Bixby Creek Bridge", lat: 36.3716, lng: -121.9018, note: "Big Sur 海岸线" },
+    { name: "Pfeiffer Beach", lat: 36.2384, lng: -121.8159, note: "海边与日落" },
+    { name: "McWay Falls Overlook", lat: 36.1586, lng: -121.6716, note: "经典瀑布机位" },
+  ],
+  "carrizo-plain-pas-robles-2026": [
+    { name: "Shell Creek Road", lat: 35.4658, lng: -120.2872, note: "追花起点" },
+    { name: "Soda Lake Boardwalk", lat: 35.3055, lng: -119.8994, note: "白天与日落" },
+    { name: "Caliente Mountain Ridge", lat: 35.2726, lng: -119.8766, note: "山脊观景" },
+    { name: "Sculpterra Winery", lat: 35.5575, lng: -120.7078, note: "Pas Robles 品酒" },
+  ],
+  "crater-lake-lassen-2022": [
+    { name: "Crater Lake Rim Village", lat: 42.8932, lng: -122.1384, note: "火山湖核心区" },
+    { name: "Lassen Volcanic NP South Entrance", lat: 40.4424, lng: -121.5268, note: "转场到 Lassen" },
+    { name: "Bumpass Hell Trailhead", lat: 40.4687, lng: -121.5078, note: "地热徒步" },
+    { name: "Manzanita Lake", lat: 40.5327, lng: -121.5615, note: "露营收尾" },
+  ],
+  "death-valley-2022": [
+    { name: "Mesquite Flat Sand Dunes", lat: 36.6066, lng: -117.1151, note: "沙丘" },
+    { name: "Zabriskie Point", lat: 36.4204, lng: -116.8106, note: "地貌观景点" },
+    { name: "Badwater Basin", lat: 36.2303, lng: -116.7677, note: "北美最低点" },
+    { name: "Dante's View", lat: 36.2216, lng: -116.7265, note: "全景收尾" },
+  ],
+  "del-valle-2026": [
+    { name: "Del Valle Regional Park", lat: 37.5881, lng: -121.6885, note: "主区域" },
+    { name: "East Shore Trail", lat: 37.5997, lng: -121.6935, note: "湖边步道" },
+  ],
+  "fallen-leaf-2023": [
+    { name: "Fallen Leaf Campground", lat: 38.9241, lng: -120.0569, note: "露营地" },
+    { name: "Fallen Leaf Lake", lat: 38.9288, lng: -120.0449, note: "湖畔活动" },
+    { name: "Tahoe Tallac Historic Site", lat: 38.9428, lng: -120.0413, note: "历史建筑" },
+  ],
+  "filoli-garden-2025": [
+    { name: "Filoli Historic House & Garden", lat: 37.4687, lng: -122.3078, note: "庄园花园" },
+  ],
+  "henry-cowell-2023": [
+    { name: "Henry Cowell Redwoods SP", lat: 37.0405, lng: -122.0644, note: "红杉步道" },
+    { name: "Roaring Camp Railroads", lat: 37.0407, lng: -122.0646, note: "森林小火车" },
+  ],
+  "lake-tahoe-2024": [
+    { name: "Sand Harbor", lat: 39.1948, lng: -119.9284, note: "北岸" },
+    { name: "Kings Beach", lat: 39.2370, lng: -120.0265, note: "环湖补给" },
+    { name: "Emerald Bay", lat: 38.9537, lng: -120.0992, note: "南岸经典机位" },
+    { name: "Tahoe City", lat: 39.1716, lng: -120.1386, note: "环湖收尾" },
+  ],
+  "los-angeles-santa-monica-2014": [
+    { name: "Griffith Observatory", lat: 34.1184, lng: -118.3004, note: "LA 城市观景" },
+    { name: "Hollywood Walk of Fame", lat: 34.1018, lng: -118.3269, note: "城市地标" },
+    { name: "Santa Monica Pier", lat: 34.0099, lng: -118.4973, note: "海边主点位" },
+    { name: "Venice Beach Boardwalk", lat: 33.9850, lng: -118.4695, note: "海边步道" },
+  ],
+  "mammoth-lake-2024": [
+    { name: "Tioga Pass", lat: 37.9112, lng: -119.2573, note: "进山路线" },
+    { name: "Mammoth Lakes Village", lat: 37.6455, lng: -118.9800, note: "住宿与补给" },
+    { name: "Minaret Vista", lat: 37.6323, lng: -119.0318, note: "山景机位" },
+    { name: "Convict Lake", lat: 37.5940, lng: -118.8332, note: "湖边收尾" },
+  ],
+  "maui-2025-family-trip": [
+    { name: "Kahului", lat: 20.8893, lng: -156.4729, note: "进出岛" },
+    { name: "Hana", lat: 20.7581, lng: -155.9880, note: "Road to Hana" },
+    { name: "Haleakala Summit", lat: 20.7098, lng: -156.2535, note: "高海拔观景" },
+    { name: "Kaanapali Beach", lat: 20.9171, lng: -156.6938, note: "海边活动" },
+  ],
+  "miami-houston-2026": [
+    { name: "Wynwood Walls", lat: 25.8014, lng: -80.1990, note: "街头艺术" },
+    { name: "South Beach 10th Street", lat: 25.7795, lng: -80.1317, note: "海滩" },
+    { name: "Puerto Sagua", lat: 25.7824, lng: -80.1341, note: "餐厅" },
+    { name: "Space Center Houston", lat: 29.5502, lng: -95.0970, note: "航天展区" },
+  ],
+  "monterey-17miles-2024": [
+    { name: "Monterey Fisherman's Wharf", lat: 36.6036, lng: -121.8947, note: "节日海边" },
+    { name: "Lone Cypress (17-Mile Drive)", lat: 36.5697, lng: -121.9654, note: "沿线经典点" },
+    { name: "Carmel-by-the-Sea", lat: 36.5552, lng: -121.9233, note: "街区收尾" },
+  ],
+  "mt-shasta-2022": [
+    { name: "Mount Shasta City", lat: 41.3101, lng: -122.3094, note: "进山补给" },
+    { name: "Lake Siskiyou", lat: 41.2595, lng: -122.3451, note: "湖边活动" },
+    { name: "Mount Shasta Ski Park", lat: 41.3212, lng: -122.1976, note: "雪地体验" },
+  ],
+  "palm-spring-2025": [
+    { name: "Palm Springs Aerial Tramway", lat: 33.8389, lng: -116.6122, note: "山地缆车" },
+    { name: "Joshua Tree Hidden Valley", lat: 34.0121, lng: -116.1670, note: "国家公园" },
+    { name: "Cholla Cactus Garden", lat: 33.9252, lng: -115.9268, note: "沙漠打卡" },
+  ],
+  "pasifika-steam-fest-2026": [
+    { name: "Pasifika STEAM Fest Venue", lat: 37.5375, lng: -122.2997, note: "主活动" },
+    { name: "Roblox Office (San Mateo)", lat: 37.5372, lng: -122.2999, note: "活动后顺路外拍" },
+  ],
+  "pinnicle-2025": [
+    { name: "Pinnacles East Entrance", lat: 36.4860, lng: -121.1825, note: "入口打卡" },
+    { name: "Bear Gulch Cave Trail", lat: 36.4866, lng: -121.1731, note: "洞穴探险" },
+    { name: "Bear Gulch Reservoir", lat: 36.4842, lng: -121.1690, note: "湖边收尾" },
+  ],
+  "san-jose-easter-2026": [
+    { name: "San Jose Community Park", lat: 37.3387, lng: -121.8853, note: "复活节主活动" },
+    { name: "Easter Theme Tent Area", lat: 37.3395, lng: -121.8870, note: "主题拍照区" },
+  ],
+  "sea-otter-2025": [
+    { name: "WeatherTech Raceway Laguna Seca", lat: 36.5844, lng: -121.7539, note: "Sea Otter 主会场" },
+    { name: "Monterey Bay Coastal Trail", lat: 36.6121, lng: -121.9012, note: "骑行路段" },
+    { name: "Cannery Row", lat: 36.6178, lng: -121.9018, note: "海边收尾" },
+  ],
+  "stars-and-strides-5k-2024": [
+    { name: "Stars and Strides 5K Start", lat: 37.3330, lng: -121.9000, note: "起终点区域" },
+    { name: "Bay Area 5K Course", lat: 37.3363, lng: -121.8949, note: "赛道中段" },
+  ],
+  "stars-and-stripes-5k-2025": [
+    { name: "Stars and Stripes 5K Start", lat: 37.3330, lng: -121.9000, note: "起终点区域" },
+    { name: "Bay Area 5K Course", lat: 37.3363, lng: -121.8949, note: "赛道中段" },
+  ],
+  "teton-yellowstone-2024": [
+    { name: "Grand Teton Moose Entrance", lat: 43.6550, lng: -110.7130, note: "Teton 入园" },
+    { name: "Jenny Lake", lat: 43.7665, lng: -110.7307, note: "Teton 核心点" },
+    { name: "Old Faithful", lat: 44.4605, lng: -110.8281, note: "Yellowstone" },
+    { name: "Grand Prismatic Spring", lat: 44.5250, lng: -110.8382, note: "地热区" },
+  ],
+  "yosemite-2024": [
+    { name: "El Capitan Picnic Area", lat: 37.7236, lng: -119.6372, note: "火瀑布拍摄位" },
+    { name: "Yosemite Falls Trailhead", lat: 37.7459, lng: -119.5962, note: "徒步起点" },
+    { name: "Bridalveil Fall", lat: 37.7163, lng: -119.6508, note: "瀑布近景" },
+    { name: "Tunnel View", lat: 37.7151, lng: -119.6767, note: "经典全景" },
+  ],
+};

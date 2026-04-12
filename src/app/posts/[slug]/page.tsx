@@ -7,6 +7,7 @@ import rehypeSlug from "rehype-slug";
 import rehypeAutolinkHeadings from "rehype-autolink-headings";
 import { getAllPosts, getPostBySlug } from "@/lib/posts";
 import { mdxComponents } from "@/components/mdx-components";
+import { TripMap } from "@/components/trip-map";
 
 type Params = {
   params: Promise<{ slug: string }>;
@@ -67,6 +68,8 @@ export default async function PostDetail({ params }: Params) {
               priority
             />
           </div>
+
+          <TripMap title={post.frontmatter.title} locations={post.locations} />
 
           <div className="mdx-content max-w-none">
             {content}
