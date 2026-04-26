@@ -34,7 +34,31 @@ export type Heading = {
   id: string;
 };
 
+export type SearchIndexEntry = {
+  slug: string;
+  href: string;
+  title: string;
+  excerpt: string;
+  category: string;
+  region: string;
+  date: string;
+  readTime: string;
+  coverImage: string;
+  tags: string[];
+  headings: string[];
+  locations: string[];
+  body: string;
+  searchText: string;
+};
+
 type RawFrontmatter = Record<string, unknown>;
+type ParsedPost = {
+  slug: string;
+  frontmatter: PostFrontmatter;
+  content: string;
+  headings: Heading[];
+  locations: TripLocation[];
+};
 
 function slugify(text: string) {
   return text
@@ -255,32 +279,19 @@ function parsePostFrontmatter(data: unknown, filePath: string): PostFrontmatter 
   };
 }
 
-export function getAllPosts(): PostSummary[] {
+function getPostFilenames() {
   if (!fs.existsSync(POSTS_DIR)) return [];
 
-  const files = fs
-    .readdirSync(POSTS_DIR)
-    .filter((file) => file.endsWith(".mdx") && !file.startsWith("_"));
-
-  return files
-    .map((file) => {
-      const slug = file.replace(/\.mdx$/, "");
-      const fullPath = path.join(POSTS_DIR, file);
-      const raw = fs.readFileSync(fullPath, "utf8");
-      const { data } = matter(raw);
-
-      return {
-        slug,
-        ...parsePostFrontmatter(data, fullPath),
-      };
-    })
-    .sort((a, b) => +new Date(b.date) - +new Date(a.date));
+  return fs.readdirSync(POSTS_DIR).filter((file) => file.endsWith(".mdx") && !file.startsWith("_"));
 }
 
-export function getPostBySlug(slug: string) {
-  const fullPath = path.join(POSTS_DIR, `${slug}.mdx`);
-  if (!fs.existsSync(fullPath)) return null;
+function resolvePostLocations(slug: string, frontmatter: PostFrontmatter) {
+  return frontmatter.locations && frontmatter.locations.length > 0
+    ? frontmatter.locations
+    : (slugFallbackLocations[slug] ?? []);
+}
 
+function readParsedPost(fullPath: string, slug: string): ParsedPost {
   const raw = fs.readFileSync(fullPath, "utf8");
   const { data, content } = matter(raw);
   const frontmatter = parsePostFrontmatter(data, fullPath);
@@ -290,9 +301,63 @@ export function getPostBySlug(slug: string) {
     frontmatter,
     content,
     headings: extractHeadings(content),
-    locations: frontmatter.locations && frontmatter.locations.length > 0
-      ? frontmatter.locations
-      : (slugFallbackLocations[slug] ?? []),
+    locations: resolvePostLocations(slug, frontmatter),
+  };
+}
+
+function sortByDate<T extends { date: string }>(a: T, b: T) {
+  return +new Date(b.date) - +new Date(a.date);
+}
+
+function normalizeText(value: string) {
+  return value.replace(/\s+/g, " ").trim();
+}
+
+function extractPlainText(content: string) {
+  return normalizeText(
+    content
+      .replace(/^import\s.+$/gm, " ")
+      .replace(/^export\s.+$/gm, " ")
+      .replace(/```[\s\S]*?```/g, " ")
+      .replace(/!\[([^\]]*)\]\(([^)]+)\)/g, " $1 ")
+      .replace(/\[([^\]]+)\]\(([^)]+)\)/g, " $1 ")
+      .replace(/`([^`]+)`/g, " $1 ")
+      .replace(/<[^>]+>/g, " ")
+      .replace(/^\s{0,3}#{1,6}\s+/gm, "")
+      .replace(/^\s*[-*+]\s+/gm, "")
+      .replace(/^\s*\d+\.\s+/gm, "")
+      .replace(/^\s*>\s?/gm, "")
+      .replace(/[*_~|]/g, " "),
+  );
+}
+
+export function getAllPosts(): PostSummary[] {
+  return getPostFilenames()
+    .map((file) => {
+      const slug = file.replace(/\.mdx$/, "");
+      const fullPath = path.join(POSTS_DIR, file);
+      const post = readParsedPost(fullPath, slug);
+
+      return {
+        slug: post.slug,
+        ...post.frontmatter,
+      };
+    })
+    .sort(sortByDate);
+}
+
+export function getPostBySlug(slug: string) {
+  const fullPath = path.join(POSTS_DIR, `${slug}.mdx`);
+  if (!fs.existsSync(fullPath)) return null;
+
+  const post = readParsedPost(fullPath, slug);
+
+  return {
+    slug: post.slug,
+    frontmatter: post.frontmatter,
+    content: post.content,
+    headings: post.headings,
+    locations: post.locations,
   };
 }
 
@@ -311,6 +376,49 @@ export function getAdjacentPosts(slug: string): AdjacentPosts {
     previous: posts[currentIndex - 1] ?? null,
     next: posts[currentIndex + 1] ?? null,
   };
+}
+
+export function getSearchIndex(): SearchIndexEntry[] {
+  return getPostFilenames()
+    .map((file) => {
+      const slug = file.replace(/\.mdx$/, "");
+      const fullPath = path.join(POSTS_DIR, file);
+      const post = readParsedPost(fullPath, slug);
+      const region = post.frontmatter.category.split(" · ")[0];
+      const body = extractPlainText(post.content);
+      const headings = post.headings.map((heading) => heading.text);
+      const locations = post.locations.map((location) => normalizeText(`${location.name} ${location.note ?? ""}`));
+      const tags = post.frontmatter.tags ?? [];
+      const searchText = normalizeText(
+        [
+          post.frontmatter.title,
+          post.frontmatter.excerpt,
+          post.frontmatter.category,
+          tags.join(" "),
+          headings.join(" "),
+          locations.join(" "),
+          body,
+        ].join(" ").toLowerCase(),
+      );
+
+      return {
+        slug: post.slug,
+        href: `/posts/${post.slug}`,
+        title: post.frontmatter.title,
+        excerpt: post.frontmatter.excerpt,
+        category: post.frontmatter.category,
+        region,
+        date: post.frontmatter.date,
+        readTime: post.frontmatter.readTime,
+        coverImage: post.frontmatter.coverImage,
+        tags,
+        headings,
+        locations,
+        body,
+        searchText,
+      };
+    })
+    .sort(sortByDate);
 }
 
 function extractHeadings(content: string): Heading[] {
