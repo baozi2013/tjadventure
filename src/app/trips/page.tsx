@@ -1,42 +1,38 @@
-import Image from "next/image";
-import Link from "next/link";
 import { getAllPosts } from "@/lib/posts";
+import { PostCard } from "@/components/post-card";
+import { SiteNav } from "@/components/site-nav";
 
 export default function TripsPage() {
   const allPosts = getAllPosts();
-  const categories = [
-    "全部",
-    ...Array.from(new Set(allPosts.map((post) => post.category.split(" · ")[0]))),
-  ];
+  const groupedPosts = Array.from(
+    allPosts.reduce((map, post) => {
+      const region = post.category.split(" · ")[0];
+      const current = map.get(region) ?? [];
+      current.push(post);
+      map.set(region, current);
+      return map;
+    }, new Map<string, typeof allPosts>()),
+  );
 
   return (
     <main className="mx-auto min-h-screen w-full max-w-6xl px-5 pb-20 pt-10 sm:px-8 lg:px-10">
-      <nav className="mb-8 flex flex-wrap items-center gap-2 text-sm font-medium text-neutral-600 dark:text-neutral-300">
-        <Link href="/" className="rounded-full border border-transparent px-3 py-1.5 transition hover:border-black/15 hover:bg-neutral-100 hover:text-neutral-900 dark:hover:border-white/20 dark:hover:bg-neutral-800 dark:hover:text-white">
-          Home
-        </Link>
-        <Link href="/about" className="rounded-full border border-transparent px-3 py-1.5 transition hover:border-black/15 hover:bg-neutral-100 hover:text-neutral-900 dark:hover:border-white/20 dark:hover:bg-neutral-800 dark:hover:text-white">
-          About Us
-        </Link>
-        <Link href="/gears" className="rounded-full border border-transparent px-3 py-1.5 transition hover:border-black/15 hover:bg-neutral-100 hover:text-neutral-900 dark:hover:border-white/20 dark:hover:bg-neutral-800 dark:hover:text-white">
-          Gears
-        </Link>
-        <Link href="/trips" className="rounded-full border border-black/20 bg-white px-3 py-1.5 text-neutral-900 shadow-sm dark:border-white/25 dark:bg-neutral-900 dark:text-white">
-          All Trips
-        </Link>
-      </nav>
+      <SiteNav current="trips" />
 
       <header className="mb-8 rounded-3xl border border-black/10 bg-white p-7 dark:border-white/10 dark:bg-neutral-950">
         <h1 className="text-3xl font-semibold tracking-tight">All Trips</h1>
         <p className="mt-3 text-base leading-8 text-neutral-700 dark:text-neutral-300">
-          所有游记集合页，按日期从新到旧排序。
+          所有游记按地区分组展示，每个分组内部按日期从新到旧排序，方便先选目的地，再进单篇路线。
         </p>
 
         <div className="mt-4 flex flex-wrap gap-2 text-xs text-neutral-600 dark:text-neutral-300">
-          {categories.map((item) => (
-            <span key={item} className="rounded-full border border-black/10 px-3 py-1 dark:border-white/15">
-              {item}
-            </span>
+          {groupedPosts.map(([region, posts]) => (
+            <a
+              key={region}
+              href={`#region-${region.toLowerCase().replace(/\s+/g, "-")}`}
+              className="rounded-full border border-black/10 px-3 py-1 transition hover:bg-neutral-100 dark:border-white/15 dark:hover:bg-neutral-900"
+            >
+              {region} · {posts.length}
+            </a>
           ))}
         </div>
       </header>
@@ -44,37 +40,24 @@ export default function TripsPage() {
       {allPosts.length === 0 ? (
         <p className="text-sm text-neutral-600 dark:text-neutral-300">No posts yet.</p>
       ) : (
-        <section className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
-          {allPosts.map((post) => (
-            <Link
-              key={post.slug}
-              href={`/posts/${post.slug}`}
-              className="group overflow-hidden rounded-2xl border border-black/10 bg-white shadow-sm transition hover:-translate-y-0.5 hover:shadow-md dark:border-white/10 dark:bg-neutral-950"
-            >
-              <div className="relative h-44 w-full overflow-hidden">
-                <Image
-                  src={post.coverImage}
-                  alt={post.title}
-                  fill
-                  className="object-cover transition duration-500 group-hover:scale-[1.03]"
-                  sizes="(max-width: 639px) 100vw, (max-width: 1023px) 50vw, 33vw"
-                />
+        <div className="space-y-10">
+          {groupedPosts.map(([region, posts]) => (
+            <section key={region} id={`region-${region.toLowerCase().replace(/\s+/g, "-")}`}>
+              <div className="mb-5 flex items-end justify-between gap-3">
+                <div>
+                  <p className="text-xs uppercase tracking-[0.18em] text-neutral-500">Region</p>
+                  <h2 className="mt-1 text-2xl font-semibold tracking-tight">{region}</h2>
+                </div>
+                <p className="text-sm text-neutral-500">{posts.length} 篇</p>
               </div>
-              <div className="p-5">
-                <p className="text-xs uppercase tracking-wider text-neutral-500">{post.category}</p>
-                <h2 className="mt-2 text-lg font-semibold leading-snug group-hover:underline">
-                  {post.title}
-                </h2>
-                <p className="mt-2 text-sm leading-6 text-neutral-600 dark:text-neutral-300">
-                  {post.excerpt}
-                </p>
-                <p className="mt-3 text-xs text-neutral-500">
-                  {post.date} · {post.readTime}
-                </p>
+              <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+                {posts.map((post) => (
+                  <PostCard key={post.slug} post={post} />
+                ))}
               </div>
-            </Link>
+            </section>
           ))}
-        </section>
+        </div>
       )}
     </main>
   );

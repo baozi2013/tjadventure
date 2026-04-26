@@ -5,6 +5,9 @@ import { slugFallbackLocations } from "@/data/trip-locations";
 import type { TripLocation } from "@/types/posts";
 
 const POSTS_DIR = path.join(process.cwd(), "content/posts");
+const PUBLIC_DIR = path.join(process.cwd(), "public");
+const CATEGORY_FORMAT = /^.+\s·\s.+$/;
+const READ_TIME_FORMAT = /^[1-9]\d*\s+min$/;
 
 export type PostFrontmatter = {
   title: string;
@@ -19,6 +22,11 @@ export type PostFrontmatter = {
 
 export type PostSummary = PostFrontmatter & {
   slug: string;
+};
+
+export type AdjacentPosts = {
+  previous: PostSummary | null;
+  next: PostSummary | null;
 };
 
 export type Heading = {
@@ -60,15 +68,59 @@ function validateDate(rawDate: string, filePath: string): string {
     failFrontmatter(filePath, `"date" must use YYYY-MM-DD format.`);
   }
 
-  if (Number.isNaN(Date.parse(rawDate))) {
+  const [year, month, day] = rawDate.split("-").map((value) => Number.parseInt(value, 10));
+  const normalized = new Date(Date.UTC(year, month - 1, day));
+  if (
+    Number.isNaN(normalized.getTime()) ||
+    normalized.getUTCFullYear() !== year ||
+    normalized.getUTCMonth() + 1 !== month ||
+    normalized.getUTCDate() !== day
+  ) {
     failFrontmatter(filePath, `"date" is not a valid calendar date.`);
   }
 
   return rawDate;
 }
 
+function validateCategory(rawCategory: string, filePath: string): string {
+  if (!CATEGORY_FORMAT.test(rawCategory)) {
+    failFrontmatter(filePath, `"category" must follow "Region · Theme" format.`);
+  }
+
+  return rawCategory;
+}
+
+function validateReadTime(rawReadTime: string, filePath: string): string {
+  if (!READ_TIME_FORMAT.test(rawReadTime)) {
+    failFrontmatter(filePath, `"readTime" must follow "<number> min" format (for example, "8 min").`);
+  }
+
+  return rawReadTime;
+}
+
+function validateLocalPublicAsset(rawPath: string, fieldName: string, filePath: string): string {
+  if (!rawPath.startsWith("/")) {
+    failFrontmatter(filePath, `"${fieldName}" must start with "/" when using local assets.`);
+  }
+
+  if (rawPath.includes("..")) {
+    failFrontmatter(filePath, `"${fieldName}" must not contain ".." segments.`);
+  }
+
+  const absolutePath = path.join(PUBLIC_DIR, rawPath.slice(1));
+  if (!fs.existsSync(absolutePath)) {
+    failFrontmatter(filePath, `"${fieldName}" points to missing file: "${rawPath}".`);
+  }
+
+  return rawPath;
+}
+
 function validateCoverImage(rawCoverImage: string, filePath: string): string {
-  if (rawCoverImage.startsWith("/") || /^https?:\/\//.test(rawCoverImage)) {
+  if (rawCoverImage.startsWith("/")) {
+    return validateLocalPublicAsset(rawCoverImage, "coverImage", filePath);
+  }
+
+  if (/^https?:\/\//.test(rawCoverImage)) {
     return rawCoverImage;
   }
 
@@ -76,7 +128,11 @@ function validateCoverImage(rawCoverImage: string, filePath: string): string {
 }
 
 function validateLocationImage(rawImage: string, filePath: string, index: number): string {
-  if (rawImage.startsWith("/") || /^https?:\/\//.test(rawImage)) {
+  if (rawImage.startsWith("/")) {
+    return validateLocalPublicAsset(rawImage, `locations[${index}].image`, filePath);
+  }
+
+  if (/^https?:\/\//.test(rawImage)) {
     return rawImage;
   }
 
@@ -185,8 +241,8 @@ function parsePostFrontmatter(data: unknown, filePath: string): PostFrontmatter 
   const title = readRequiredText(data, "title", filePath);
   const excerpt = readRequiredText(data, "excerpt", filePath);
   const date = validateDate(readRequiredText(data, "date", filePath), filePath);
-  const category = readRequiredText(data, "category", filePath);
-  const readTime = readRequiredText(data, "readTime", filePath);
+  const category = validateCategory(readRequiredText(data, "category", filePath), filePath);
+  const readTime = validateReadTime(readRequiredText(data, "readTime", filePath), filePath);
   const coverImage = validateCoverImage(readRequiredText(data, "coverImage", filePath), filePath);
   const tags = readOptionalTags(data, filePath);
   const locations = readOptionalLocations(data, filePath);
@@ -241,6 +297,23 @@ export function getPostBySlug(slug: string) {
     locations: frontmatter.locations && frontmatter.locations.length > 0
       ? frontmatter.locations
       : (slugFallbackLocations[slug] ?? []),
+  };
+}
+
+export function getAdjacentPosts(slug: string): AdjacentPosts {
+  const posts = getAllPosts();
+  const currentIndex = posts.findIndex((post) => post.slug === slug);
+
+  if (currentIndex === -1) {
+    return {
+      previous: null,
+      next: null,
+    };
+  }
+
+  return {
+    previous: posts[currentIndex - 1] ?? null,
+    next: posts[currentIndex + 1] ?? null,
   };
 }
 
