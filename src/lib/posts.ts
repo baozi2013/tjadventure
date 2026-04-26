@@ -5,7 +5,6 @@ import { slugFallbackLocations } from "@/data/trip-locations";
 import type { TripLocation } from "@/types/posts";
 
 const POSTS_DIR = path.join(process.cwd(), "content/posts");
-const PUBLIC_DIR = path.join(process.cwd(), "public");
 const CATEGORY_FORMAT = /^.+\s·\s.+$/;
 const READ_TIME_FORMAT = /^[1-9]\d*\s+min$/;
 
@@ -98,7 +97,9 @@ function validateReadTime(rawReadTime: string, filePath: string): string {
   return rawReadTime;
 }
 
-function validateLocalPublicAsset(rawPath: string, fieldName: string, filePath: string): string {
+// Build-time validation checks that referenced public assets exist.
+// At runtime we only validate the path shape so route traces do not pull `public/` into server bundles.
+function validateLocalAssetPath(rawPath: string, fieldName: string, filePath: string): string {
   if (!rawPath.startsWith("/")) {
     failFrontmatter(filePath, `"${fieldName}" must start with "/" when using local assets.`);
   }
@@ -107,17 +108,12 @@ function validateLocalPublicAsset(rawPath: string, fieldName: string, filePath: 
     failFrontmatter(filePath, `"${fieldName}" must not contain ".." segments.`);
   }
 
-  const absolutePath = path.join(PUBLIC_DIR, rawPath.slice(1));
-  if (!fs.existsSync(absolutePath)) {
-    failFrontmatter(filePath, `"${fieldName}" points to missing file: "${rawPath}".`);
-  }
-
   return rawPath;
 }
 
 function validateCoverImage(rawCoverImage: string, filePath: string): string {
   if (rawCoverImage.startsWith("/")) {
-    return validateLocalPublicAsset(rawCoverImage, "coverImage", filePath);
+    return validateLocalAssetPath(rawCoverImage, "coverImage", filePath);
   }
 
   if (/^https?:\/\//.test(rawCoverImage)) {
@@ -129,7 +125,7 @@ function validateCoverImage(rawCoverImage: string, filePath: string): string {
 
 function validateLocationImage(rawImage: string, filePath: string, index: number): string {
   if (rawImage.startsWith("/")) {
-    return validateLocalPublicAsset(rawImage, `locations[${index}].image`, filePath);
+    return validateLocalAssetPath(rawImage, `locations[${index}].image`, filePath);
   }
 
   if (/^https?:\/\//.test(rawImage)) {
