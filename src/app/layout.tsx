@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "leaflet/dist/leaflet.css";
 import "./globals.css";
+import { getSiteMetadataDefaults } from "@/lib/metadata";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -13,18 +14,7 @@ const geistMono = Geist_Mono({
   subsets: ["latin"],
 });
 
-export const metadata: Metadata = {
-  title: {
-    default: "TJ Adventure",
-    template: "%s | TJ Adventure",
-  },
-  description: "Travel stories and practical guides.",
-  icons: {
-    icon: [{ url: "/icon.png", type: "image/png" }],
-    shortcut: "/icon.png",
-    apple: "/icon.png",
-  },
-};
+export const metadata: Metadata = getSiteMetadataDefaults();
 
 export default function RootLayout({
   children,

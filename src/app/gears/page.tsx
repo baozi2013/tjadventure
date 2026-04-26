@@ -1,11 +1,21 @@
 import fs from "node:fs";
 import path from "node:path";
-import Link from "next/link";
+import type { Metadata } from "next";
 import { compileMDX } from "next-mdx-remote/rsc";
 import remarkGfm from "remark-gfm";
+import { SiteNav } from "@/components/site-nav";
 import { mdxComponents } from "@/components/mdx-components";
+import { createPageMetadata } from "@/lib/metadata";
 
 const GEARS_DIR = path.join(process.cwd(), "content/gears");
+
+export const metadata: Metadata = createPageMetadata({
+  title: "Gears",
+  description: "See the camping, photo, and road-trip gear TJ Adventure actually uses on family trips.",
+  pathname: "/gears",
+  image: "/gears/sonya6300.jpeg",
+  keywords: ["travel gear", "camping gear", "camera gear", "family trip packing"],
+});
 
 async function renderGearMarkdown(fileName: string) {
   const fullPath = path.join(GEARS_DIR, fileName);
@@ -32,20 +42,7 @@ export default async function GearsPage() {
 
   return (
     <main className="mx-auto min-h-screen w-full max-w-4xl px-5 pb-20 pt-10 sm:px-8 lg:px-10">
-      <nav className="mb-8 flex flex-wrap items-center gap-2 text-sm font-medium text-neutral-600 dark:text-neutral-300">
-        <Link href="/" className="rounded-full border border-transparent px-3 py-1.5 transition hover:border-black/15 hover:bg-neutral-100 hover:text-neutral-900 dark:hover:border-white/20 dark:hover:bg-neutral-800 dark:hover:text-white">
-          Home
-        </Link>
-        <Link href="/about" className="rounded-full border border-transparent px-3 py-1.5 transition hover:border-black/15 hover:bg-neutral-100 hover:text-neutral-900 dark:hover:border-white/20 dark:hover:bg-neutral-800 dark:hover:text-white">
-          About Us
-        </Link>
-        <Link href="/gears" className="rounded-full border border-black/20 bg-white px-3 py-1.5 text-neutral-900 shadow-sm dark:border-white/25 dark:bg-neutral-900 dark:text-white">
-          Gears
-        </Link>
-        <Link href="/trips" className="rounded-full border border-transparent px-3 py-1.5 transition hover:border-black/15 hover:bg-neutral-100 hover:text-neutral-900 dark:hover:border-white/20 dark:hover:bg-neutral-800 dark:hover:text-white">
-          All Trips
-        </Link>
-      </nav>
+      <SiteNav current="gears" />
 
       <section className="rounded-3xl border border-black/10 bg-white p-7 dark:border-white/10 dark:bg-neutral-950">
         <h1 className="text-3xl font-semibold tracking-tight">Gears</h1>

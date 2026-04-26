@@ -1,6 +1,15 @@
+import type { Metadata } from "next";
 import { getAllPosts } from "@/lib/posts";
 import { PostCard } from "@/components/post-card";
 import { SiteNav } from "@/components/site-nav";
+import { createPageMetadata } from "@/lib/metadata";
+
+export const metadata: Metadata = createPageMetadata({
+  title: "All Trips",
+  description: "Browse every TJ Adventure trip post by region, with dates, summaries, and quick route context.",
+  pathname: "/trips",
+  keywords: ["all trips", "trip archive", "travel destinations", "travel posts"],
+});
 
 export default function TripsPage() {
   const allPosts = getAllPosts();

@@ -1,7 +1,16 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 import { getAllPosts } from "@/lib/posts";
 import { PostCard } from "@/components/post-card";
 import { SiteNav } from "@/components/site-nav";
+import { createPageMetadata } from "@/lib/metadata";
+
+export const metadata: Metadata = createPageMetadata({
+  title: "Family Travel Guides and Stories",
+  description: "Practical family travel stories with route notes, read times, and map-based stops for real trip planning.",
+  pathname: "/",
+  keywords: ["family travel blog", "travel stories", "road trip planning", "trip highlights"],
+});
 
 export default function Home() {
   const allPosts = getAllPosts();

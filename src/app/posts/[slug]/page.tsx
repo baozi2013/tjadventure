@@ -1,5 +1,6 @@
 import Image from "next/image";
 import Link from "next/link";
+import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { compileMDX } from "next-mdx-remote/rsc";
 import remarkGfm from "remark-gfm";
@@ -8,13 +9,41 @@ import rehypeAutolinkHeadings from "rehype-autolink-headings";
 import { getAdjacentPosts, getAllPosts, getPostBySlug } from "@/lib/posts";
 import { mdxComponents } from "@/components/mdx-components";
 import { TripMap } from "@/components/trip-map";
+import { createPageMetadata } from "@/lib/metadata";
 
 type Params = {
   params: Promise<{ slug: string }>;
 };
 
+export const dynamicParams = false;
+
 export function generateStaticParams() {
   return getAllPosts().map((post) => ({ slug: post.slug }));
+}
+
+export async function generateMetadata({ params }: Params): Promise<Metadata> {
+  const { slug } = await params;
+  const post = getPostBySlug(slug);
+
+  if (!post) {
+    return createPageMetadata({
+      title: "Post Not Found",
+      description: "The requested trip story could not be found.",
+      pathname: `/posts/${slug}`,
+    });
+  }
+
+  return createPageMetadata({
+    title: post.frontmatter.title,
+    description: post.frontmatter.excerpt,
+    pathname: `/posts/${slug}`,
+    image: post.frontmatter.coverImage,
+    keywords: post.frontmatter.tags,
+    type: "article",
+    publishedTime: post.frontmatter.date,
+    section: post.frontmatter.category,
+    tags: post.frontmatter.tags,
+  });
 }
 
 export default async function PostDetail({ params }: Params) {
