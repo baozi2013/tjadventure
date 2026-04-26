@@ -1,8 +1,9 @@
 import type { Metadata } from "next";
 
-const SITE_NAME = "TJ Adventure";
-const DEFAULT_DESCRIPTION = "Family travel stories, route notes, and practical trip guides you can actually reuse.";
-const DEFAULT_OG_IMAGE = "/branding/TJ_Adventure_patagonia_banner.jpg";
+export const SITE_NAME = "TJ Adventure";
+export const DEFAULT_DESCRIPTION =
+  "Family travel stories, route notes, and practical trip guides you can actually reuse.";
+export const DEFAULT_OG_IMAGE = "/branding/TJ_Adventure_patagonia_banner.jpg";
 const DEFAULT_SITE_URL = "http://localhost:3000";
 
 type PageMetadataInput = {
@@ -37,6 +38,11 @@ export function getSiteUrl() {
 
 export function getMetadataBase() {
   return new URL(getSiteUrl());
+}
+
+export function getAbsoluteUrl(pathname: string) {
+  const normalizedPath = pathname.startsWith("/") ? pathname : `/${pathname}`;
+  return new URL(normalizedPath, getMetadataBase()).toString();
 }
 
 export function createPageMetadata({
