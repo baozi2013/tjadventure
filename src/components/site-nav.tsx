@@ -5,6 +5,7 @@ const NAV_ITEMS = [
   { href: "/about", label: "About Us", key: "about" },
   { href: "/gears", label: "Gears", key: "gears" },
   { href: "/trips", label: "All Trips", key: "trips" },
+  { href: "/search", label: "Search", key: "search" },
 ] as const;
 
 type SiteNavKey = (typeof NAV_ITEMS)[number]["key"];

@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 import { getAllPosts } from "@/lib/posts";
 import { PostCard } from "@/components/post-card";
 import { SiteNav } from "@/components/site-nav";
@@ -32,6 +33,14 @@ export default function TripsPage() {
         <p className="mt-3 text-base leading-8 text-neutral-700 dark:text-neutral-300">
           所有游记按地区分组展示，每个分组内部按日期从新到旧排序，方便先选目的地，再进单篇路线。
         </p>
+        <div className="mt-5">
+          <Link
+            href="/search"
+            className="inline-flex rounded-full border border-neutral-900 bg-neutral-900 px-4 py-2 text-sm font-semibold text-white transition hover:bg-neutral-800 dark:border-white/20 dark:bg-white dark:text-neutral-950 dark:hover:bg-neutral-100"
+          >
+            搜索目的地和关键词
+          </Link>
+        </div>
 
         <div className="mt-4 flex flex-wrap gap-2 text-xs text-neutral-600 dark:text-neutral-300">
           {groupedPosts.map(([region, posts]) => (

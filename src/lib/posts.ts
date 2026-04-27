@@ -2,6 +2,7 @@ import fs from "node:fs";
 import path from "node:path";
 import matter from "gray-matter";
 import { slugFallbackLocations } from "@/data/trip-locations";
+import type { SearchIndexEntry } from "@/types/search";
 import type { TripLocation } from "@/types/posts";
 
 const POSTS_DIR = path.join(process.cwd(), "content/posts");
@@ -32,23 +33,6 @@ export type Heading = {
   level: 2 | 3;
   text: string;
   id: string;
-};
-
-export type SearchIndexEntry = {
-  slug: string;
-  href: string;
-  title: string;
-  excerpt: string;
-  category: string;
-  region: string;
-  date: string;
-  readTime: string;
-  coverImage: string;
-  tags: string[];
-  headings: string[];
-  locations: string[];
-  body: string;
-  searchText: string;
 };
 
 type RawFrontmatter = Record<string, unknown>;

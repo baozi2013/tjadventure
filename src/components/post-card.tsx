@@ -2,8 +2,13 @@ import Image from "next/image";
 import Link from "next/link";
 import type { PostSummary } from "@/lib/posts";
 
+export type PostCardPost = Pick<
+  PostSummary,
+  "slug" | "title" | "coverImage" | "category" | "excerpt" | "date" | "readTime"
+>;
+
 type PostCardProps = {
-  post: PostSummary;
+  post: PostCardPost;
   priority?: boolean;
   size?: "default" | "feature";
 };
