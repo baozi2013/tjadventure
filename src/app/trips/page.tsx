@@ -36,7 +36,7 @@ export default function TripsPage() {
         <div className="mt-5">
           <Link
             href="/search"
-            className="inline-flex rounded-full border border-neutral-900 bg-neutral-900 px-4 py-2 text-sm font-semibold text-white transition hover:bg-neutral-800 dark:border-white/20 dark:bg-white dark:text-neutral-950 dark:hover:bg-neutral-100"
+            className="inline-flex rounded-full border border-neutral-900 bg-neutral-900 px-4 py-2 text-sm font-semibold !text-white shadow-sm shadow-black/10 transition hover:bg-neutral-800 dark:border-white/20 dark:bg-white dark:!text-neutral-950 dark:hover:bg-neutral-100"
           >
             搜索目的地和关键词
           </Link>

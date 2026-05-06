@@ -197,7 +197,7 @@ export function SearchExperience() {
           <div className="flex gap-3">
             <button
               type="submit"
-              className="min-h-12 rounded-2xl bg-neutral-900 px-5 text-sm font-semibold text-white transition hover:bg-neutral-800 dark:bg-white dark:text-neutral-950 dark:hover:bg-neutral-100"
+              className="min-h-12 rounded-2xl bg-neutral-900 px-5 text-sm font-semibold !text-white transition hover:bg-neutral-800 dark:bg-white dark:!text-neutral-950 dark:hover:bg-neutral-100"
             >
               Search
             </button>
