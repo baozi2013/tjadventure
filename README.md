@@ -47,13 +47,13 @@ This repo now includes:
 From your Mac:
 
 ```bash
-rsync -av --delete /Users/tianhengzhou/Documents/tjadventure/ tianheng@192.168.68.88:~/tjadventure/
+rsync -av --delete /path_to_folder user_name@xxx.xx.xx.xx:~/tjadventure/
 ```
 
 ### 2) Build and run on NAS
 
 ```bash
-ssh tianheng@192.168.68.88
+ssh user_name@xxx.xx.xx.xx
 cd ~/tjadventure
 docker compose -f docker-compose.nas.yml up -d --build
 docker ps | grep tjadventure-web
@@ -62,7 +62,7 @@ docker ps | grep tjadventure-web
 ### 3) Open site in LAN
 
 ```text
-http://192.168.68.88:3000
+http://xxx.xx.xx.xx:3000
 ```
 
 ### One-command deploy script (from Mac)
@@ -87,6 +87,6 @@ REMOTE_DIR='~/projects/tjadventure' ./scripts/deploy-nas.sh
 ### Optional: update deployment after content change
 
 ```bash
-rsync -av --delete /Users/tianhengzhou/Documents/tjadventure/ tianheng@192.168.68.88:~/tjadventure/
-ssh tianheng@192.168.68.88 "cd ~/tjadventure && docker compose -f docker-compose.nas.yml up -d --build"
+rsync -av --delete /path_to_folder user_name@xxx.xx.xx.xx:~/tjadventure/
+ssh user_name@xxx.xx.xx.xx "cd ~/tjadventure && docker compose -f docker-compose.nas.yml up -d --build"
 ```
