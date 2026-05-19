@@ -70,6 +70,14 @@ a {
   margin: 1rem 0;
 }
 
+.mdx-content .strava-embed-frame {
+  margin: 1.5rem 0;
+}
+
+.mdx-content .strava-embed-frame iframe {
+  border-radius: 0.85rem;
+}
+
 .mdx-content a {
   text-decoration: underline;
   text-underline-offset: 3px;

@@ -1,5 +1,6 @@
 import type { CSSProperties } from "react";
 import Image from "next/image";
+import { StravaActivity } from "@/components/strava-activity";
 
 const DEFAULT_CONTENT_IMAGE_SIZES = "(max-width: 768px) 100vw, (max-width: 1280px) 92vw, 1100px";
 const FALLBACK_DIMENSIONS = { width: 1600, height: 1067 };
@@ -113,4 +114,5 @@ export function MdxImage({
 
 export const mdxComponents = {
   img: MdxImage,
+  StravaActivity,
 };
