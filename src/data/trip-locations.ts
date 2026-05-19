@@ -43,7 +43,7 @@ export const slugFallbackLocations: TripLocationsBySlug = {
     { name: "Roaring Camp Railroads", lat: 37.0407, lng: -122.0646, note: "森林小火车" },
   ],
   "lake-tahoe-2024": [
-    { name: "Sand Harbor", lat: 39.1948, lng: -119.9284, note: "北岸" },
+    { name: "Kings Beach", lat: 39.2370, lng: -120.0265, note: "环湖起点" },
     { name: "Emerald Bay", lat: 38.9537, lng: -120.0992, note: "南岸经典机位" },
     { name: "Tahoe City", lat: 39.1716, lng: -120.1386, note: "环湖收尾" },
   ],
