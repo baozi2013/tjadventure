@@ -72,8 +72,8 @@ BRANCH="${2}"
 COMPOSE_FILE="${3}"
 
 case "${REMOTE_DIR_RAW}" in
-  ~/*)
-    REMOTE_DIR="${HOME}/${REMOTE_DIR_RAW#~/}"
+  "~/"*)
+    REMOTE_DIR="${HOME}/${REMOTE_DIR_RAW#"~/"}"
     ;;
   \$HOME/*)
     REMOTE_DIR="${HOME}/${REMOTE_DIR_RAW#\$HOME/}"
