@@ -11,7 +11,6 @@ BRANCH="${BRANCH:-main}"
 OPEN_TUNNEL=0
 LOCAL_PORT="${LOCAL_PORT:-13000}"
 REMOTE_APP_PORT="${REMOTE_APP_PORT:-3000}"
-SITE_URL="${SITE_URL:-http://${NAS_HOST}:${REMOTE_APP_PORT}}"
 
 usage() {
   cat <<'EOF'
@@ -63,7 +62,9 @@ while [[ $# -gt 0 ]]; do
   esac
 done
 
-echo "Deploying to ${NAS_USER}@${NAS_HOST}:${REMOTE_DIR} (branch: ${BRANCH})..."
+SITE_URL="${SITE_URL:-http://${NAS_HOST}:${REMOTE_APP_PORT}}"
+
+echo "Deploying to ${NAS_USER}@${NAS_HOST}:${REMOTE_DIR} (branch: ${BRANCH}, site URL: ${SITE_URL})..."
 
 ssh -p "${NAS_PORT}" "${NAS_USER}@${NAS_HOST}" "bash -s -- '${REMOTE_DIR}' '${BRANCH}' '${COMPOSE_FILE}' '${SITE_URL}'" <<'REMOTE_SCRIPT'
 set -euo pipefail
@@ -105,7 +106,7 @@ ${COMPOSE_BIN} -f "${COMPOSE_FILE}" up -d --build
 docker ps --filter "name=tjadventure-web" --format "table {{.Names}}\t{{.Image}}\t{{.Status}}\t{{.Ports}}"
 REMOTE_SCRIPT
 
-echo "Deploy complete: http://${NAS_HOST}:${REMOTE_APP_PORT}"
+echo "Deploy complete: ${SITE_URL}"
 
 if [[ "${OPEN_TUNNEL}" -eq 1 ]]; then
   if lsof -iTCP:"${LOCAL_PORT}" -sTCP:LISTEN >/dev/null 2>&1; then

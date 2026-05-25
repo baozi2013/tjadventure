@@ -99,7 +99,7 @@ rsync -av --delete /path_to_folder user_name@xxx.xx.xx.xx:~/tjadventure/
 ```bash
 ssh user_name@xxx.xx.xx.xx
 cd ~/tjadventure
-docker compose -f docker-compose.nas.yml up -d --build
+SITE_URL='http://xxx.xx.xx.xx:3000' docker compose -f docker-compose.nas.yml up -d --build
 docker ps | grep tjadventure-web
 ```
 
@@ -138,5 +138,5 @@ SITE_URL='https://travel.example.com' ./scripts/deploy-nas.sh
 
 ```bash
 rsync -av --delete /path_to_folder user_name@xxx.xx.xx.xx:~/tjadventure/
-ssh user_name@xxx.xx.xx.xx "cd ~/tjadventure && docker compose -f docker-compose.nas.yml up -d --build"
+ssh user_name@xxx.xx.xx.xx "cd ~/tjadventure && SITE_URL='http://xxx.xx.xx.xx:3000' docker compose -f docker-compose.nas.yml up -d --build"
 ```
