@@ -203,11 +203,10 @@ export default function CyclingPage() {
           <div className="p-7 sm:p-9">
             <p className="text-xs uppercase tracking-[0.2em] text-neutral-500">Cycling Collection</p>
             <h1 className="mt-3 max-w-3xl text-4xl font-semibold tracking-tight sm:text-5xl">
-              Ride notes with routes, rhythm, and finish-line memory.
+              骑行记录
             </h1>
             <p className="mt-4 max-w-2xl text-base leading-8 text-neutral-700 dark:text-neutral-300">
-              Road loops, event weekends, and the practical bits that make a ride repeatable: where it starts,
-              how it feels, and what to remember next time.
+              胖子菜腿骚年的骑行，骑着车来来往往。
             </p>
             <div className="mt-6 flex flex-wrap gap-2 text-xs text-neutral-600 dark:text-neutral-300">
               {groupedRides.map((group) => (
