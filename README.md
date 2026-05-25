@@ -128,6 +128,12 @@ If your NAS repo is not default path:
 REMOTE_DIR='~/projects/tjadventure' ./scripts/deploy-nas.sh
 ```
 
+To publish canonical and sitemap URLs under a public domain instead of the default NAS address:
+
+```bash
+SITE_URL='https://travel.example.com' ./scripts/deploy-nas.sh
+```
+
 ### Optional: update deployment after content change
 
 ```bash

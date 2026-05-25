@@ -11,6 +11,7 @@ BRANCH="${BRANCH:-main}"
 OPEN_TUNNEL=0
 LOCAL_PORT="${LOCAL_PORT:-13000}"
 REMOTE_APP_PORT="${REMOTE_APP_PORT:-3000}"
+SITE_URL="${SITE_URL:-http://${NAS_HOST}:${REMOTE_APP_PORT}}"
 
 usage() {
   cat <<'EOF'
@@ -28,7 +29,7 @@ Options:
   -h, --help              Show this help
 
 Environment overrides:
-  NAS_USER, NAS_HOST, NAS_PORT, REMOTE_DIR, COMPOSE_FILE, BRANCH
+  NAS_USER, NAS_HOST, NAS_PORT, REMOTE_DIR, COMPOSE_FILE, BRANCH, SITE_URL
 EOF
 }
 
@@ -64,12 +65,13 @@ done
 
 echo "Deploying to ${NAS_USER}@${NAS_HOST}:${REMOTE_DIR} (branch: ${BRANCH})..."
 
-ssh -p "${NAS_PORT}" "${NAS_USER}@${NAS_HOST}" "bash -s -- '${REMOTE_DIR}' '${BRANCH}' '${COMPOSE_FILE}'" <<'REMOTE_SCRIPT'
+ssh -p "${NAS_PORT}" "${NAS_USER}@${NAS_HOST}" "bash -s -- '${REMOTE_DIR}' '${BRANCH}' '${COMPOSE_FILE}' '${SITE_URL}'" <<'REMOTE_SCRIPT'
 set -euo pipefail
 
 REMOTE_DIR_RAW="${1}"
 BRANCH="${2}"
 COMPOSE_FILE="${3}"
+SITE_URL="${4}"
 
 case "${REMOTE_DIR_RAW}" in
   "~/"*)
@@ -87,6 +89,7 @@ cd "${REMOTE_DIR}"
 git fetch origin "${BRANCH}"
 git checkout "${BRANCH}"
 git pull --ff-only origin "${BRANCH}"
+export SITE_URL
 
 if docker compose version >/dev/null 2>&1; then
   COMPOSE_BIN="docker compose"

@@ -1,9 +1,13 @@
 services:
   tjadventure:
-    build: .
+    build:
+      context: .
+      args:
+        SITE_URL: ${SITE_URL:-http://localhost:3000}
     container_name: tjadventure-web
     restart: unless-stopped
     ports:
       - "3000:3000"
     environment:
       - NODE_ENV=production
+      - SITE_URL=${SITE_URL:-http://localhost:3000}

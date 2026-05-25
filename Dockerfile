@@ -5,6 +5,8 @@ RUN npm ci
 
 FROM node:22-alpine AS builder
 WORKDIR /app
+ARG SITE_URL=http://localhost:3000
+ENV SITE_URL=${SITE_URL}
 ENV NEXT_TELEMETRY_DISABLED=1
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
