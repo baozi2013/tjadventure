@@ -5,6 +5,7 @@
   "scripts": {
     "dev": "next dev --webpack",
     "validate:posts": "node scripts/validate-posts.mjs",
+    "import:strava-cycling": "node scripts/import-strava-cycling.mjs",
     "build": "npm run validate:posts && next build",
     "start": "next start",
     "lint": "eslint"

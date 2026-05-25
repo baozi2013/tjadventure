@@ -20,6 +20,50 @@ You can start editing the page by modifying `app/page.tsx`. The page auto-update
 
 This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
 
+## Content Models
+
+### Travel posts
+
+Travel stories live in `content/posts/*.mdx`. Use `content/posts/_template.mdx` for the required frontmatter shape.
+
+### Cycling entries
+
+Cycling rides live in `content/cycling/*.mdx` as a separate collection from travel posts. Use `content/cycling/_template.mdx` for the required schema:
+
+- `rideType`: `road`, `event`, or `gravel`
+- `rideDate`: `YYYY-MM-DD`
+- `distance`: `{ value, unit }` with `mi` or `km`
+- `elevationGain`: `{ value, unit }` with `ft` or `m`
+- `movingTime`: `HHH:MM:SS`, for example `5:12:30`
+- `location`: `{ name, region }`, with optional `lat`, `lng`, and `note`
+- `stravaUrl`: a Strava activity URL
+- `coverImage` and optional `images`: local `/public` assets or http(s) URLs
+
+Run `npm run validate:posts` before publishing content. It validates both travel posts and cycling entries.
+
+### Import a Strava ride draft
+
+Generate a reviewable Cycling draft from a public Strava activity URL:
+
+```bash
+npm run import:strava-cycling -- https://www.strava.com/activities/11881460715
+```
+
+The importer writes to `content/cycling/_drafts/<suggested-slug>.mdx`, which is not included in the public collection. For a nearly publishable draft, add confirmed details at import time:
+
+```bash
+npm run import:strava-cycling -- https://www.strava.com/activities/11881460715 \
+  --slug lake-tahoe-ride \
+  --ride-type road \
+  --location "Lake Tahoe" \
+  --region "US - California" \
+  --cover-image "/trips/lake-tahoe-2024/day1-2.jpg"
+```
+
+For a public activity, the script extracts the title, date, public image hint, and available embed stats. If an activity is private or returns incomplete metadata, the script still creates a draft with `TODO` values: fill those fields from the Strava activity, choose local images, and keep `stravaUrl` as the source reference. If Strava provides an embed token for an activity, pass it with `--embed-token <token>` to seed the embedded activity block.
+
+Use `--stdout` to preview generated MDX without writing a draft.
+
 ## Learn More
 
 To learn more about Next.js, take a look at the following resources:

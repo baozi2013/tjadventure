@@ -1,4 +1,5 @@
 import type { MetadataRoute } from "next";
+import { getAllCyclingEntries } from "@/lib/cycling";
 import { getAllPosts } from "@/lib/posts";
 import { getAbsoluteUrl } from "@/lib/metadata";
 
@@ -15,6 +16,12 @@ export default function sitemap(): MetadataRoute.Sitemap {
       lastModified: new Date(),
       changeFrequency: "weekly",
       priority: 0.9,
+    },
+    {
+      url: getAbsoluteUrl("/cycling"),
+      lastModified: new Date(),
+      changeFrequency: "weekly",
+      priority: 0.8,
     },
     {
       url: getAbsoluteUrl("/about"),
@@ -37,5 +44,12 @@ export default function sitemap(): MetadataRoute.Sitemap {
     priority: 0.8,
   }));
 
-  return [...staticRoutes, ...postRoutes];
+  const cyclingRoutes: MetadataRoute.Sitemap = getAllCyclingEntries().map((entry) => ({
+    url: getAbsoluteUrl(`/cycling/${entry.slug}`),
+    lastModified: new Date(entry.rideDate),
+    changeFrequency: "monthly",
+    priority: 0.7,
+  }));
+
+  return [...staticRoutes, ...postRoutes, ...cyclingRoutes];
 }

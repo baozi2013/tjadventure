@@ -6,10 +6,10 @@ import { createPageMetadata } from "@/lib/metadata";
 
 export const metadata: Metadata = {
   ...createPageMetadata({
-    title: "Search Trips",
-    description: "Search TJ Adventure trip stories by destination, tags, landmarks, and route details.",
+    title: "Search Stories and Rides",
+    description: "Search TJ Adventure trip stories and cycling rides by destination, tags, landmarks, and route details.",
     pathname: "/search",
-    keywords: ["travel search", "trip finder", "destination search", "route search"],
+    keywords: ["travel search", "cycling search", "trip finder", "destination search", "route search"],
   }),
   robots: {
     index: false,

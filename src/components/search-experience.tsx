@@ -169,13 +169,13 @@ export function SearchExperience() {
               找到你下一篇想读的路线
             </h1>
             <p className="mt-3 text-sm leading-7 text-neutral-600 dark:text-neutral-300 sm:text-base">
-              可以搜目的地、州名、路线主题、景点名，或者正文里的关键词。比如 `Yellowstone`、`Christmas`
-              、`Carmel`、`coastal drive`。
+              可以搜目的地、州名、路线主题、骑行数据、景点名，或者正文里的关键词。比如 `Yellowstone`
+              、`Carmel`、`Lake Tahoe`、`74.5 mi`。
             </p>
           </div>
 
           <div className="rounded-2xl border border-black/10 bg-neutral-50 px-4 py-3 text-sm text-neutral-600 dark:border-white/10 dark:bg-neutral-900 dark:text-neutral-300">
-            <p className="font-medium text-neutral-900 dark:text-white">{posts.length} posts indexed</p>
+            <p className="font-medium text-neutral-900 dark:text-white">{posts.length} stories and rides indexed</p>
             <p className="mt-1 text-xs uppercase tracking-[0.18em] text-neutral-500">
               {generatedAt ? `Updated ${generatedAt}` : "Search index ready"}
             </p>
@@ -184,7 +184,7 @@ export function SearchExperience() {
 
         <form onSubmit={handleSubmit} className="mt-6 flex flex-col gap-3 lg:flex-row">
           <label className="sr-only" htmlFor="site-search">
-            Search posts
+            Search stories and rides
           </label>
           <input
             id="site-search"
@@ -236,13 +236,13 @@ export function SearchExperience() {
             {normalizedQuery ? "Search Results" : "Browse Suggestions"}
           </p>
           <h2 className="mt-1 text-2xl font-semibold tracking-tight">
-            {normalizedQuery ? `“${normalizedQuery}”` : "Recent posts from the index"}
+            {normalizedQuery ? `“${normalizedQuery}”` : "Recent stories and rides from the index"}
           </h2>
         </div>
         <p className="text-sm text-neutral-500">
           {normalizedQuery
             ? `${results.length} result${results.length === 1 ? "" : "s"}`
-            : `Showing ${Math.min(posts.length, DEFAULT_RESULTS_LIMIT)} recent posts`}
+            : `Showing ${Math.min(posts.length, DEFAULT_RESULTS_LIMIT)} recent entries`}
         </p>
       </div>
 
@@ -269,12 +269,12 @@ export function SearchExperience() {
         </div>
       ) : results.length === 0 ? (
         <div className="mt-5 rounded-2xl border border-dashed border-black/10 px-5 py-8 text-sm text-neutral-600 dark:border-white/10 dark:text-neutral-300">
-          没有找到匹配结果。试试换一个地名、国家、节日主题，或者直接搜景点名。
+          没有找到匹配结果。试试换一个地名、活动名称、路线数据，或者直接搜景点名。
         </div>
       ) : (
         <div className="mt-5 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
-          {results.map((post) => (
-            <PostCard key={post.slug} post={post} />
+          {results.map((post, index) => (
+            <PostCard key={post.href} post={post} priority={index === 0} />
           ))}
         </div>
       )}

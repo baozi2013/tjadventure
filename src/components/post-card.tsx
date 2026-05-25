@@ -5,7 +5,9 @@ import type { PostSummary } from "@/lib/posts";
 export type PostCardPost = Pick<
   PostSummary,
   "slug" | "title" | "coverImage" | "category" | "excerpt" | "date" | "readTime"
->;
+> & {
+  href?: string;
+};
 
 type PostCardProps = {
   post: PostCardPost;
@@ -18,7 +20,7 @@ export function PostCard({ post, priority = false, size = "default" }: PostCardP
 
   return (
     <Link
-      href={`/posts/${post.slug}`}
+      href={post.href ?? `/posts/${post.slug}`}
       className="group overflow-hidden rounded-2xl border border-black/10 bg-white shadow-sm transition hover:-translate-y-0.5 hover:shadow-md dark:border-white/10 dark:bg-neutral-950"
     >
       <div className={`relative w-full overflow-hidden ${imageHeightClassName}`}>
