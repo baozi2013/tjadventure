@@ -1,4 +1,4 @@
-export const CYCLING_RIDE_TYPES = ["road", "event", "gravel"] as const;
+export const CYCLING_RIDE_TYPES = ["road", "gravel", "event"] as const;
 
 export type CyclingRideType = (typeof CYCLING_RIDE_TYPES)[number];
 

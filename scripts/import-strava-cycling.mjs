@@ -3,7 +3,7 @@ import path from "node:path";
 
 const ROOT_DIR = process.cwd();
 const DRAFTS_DIR = path.join(ROOT_DIR, "content/cycling/_drafts");
-const RIDE_TYPES = new Set(["road", "event", "gravel"]);
+const RIDE_TYPES = new Set(["road", "gravel", "event"]);
 
 function usage() {
   return `Usage:
@@ -11,7 +11,7 @@ function usage() {
 
 Options:
   --slug <slug>             Override the generated draft slug.
-  --ride-type <type>        road, event, or gravel (default: road).
+  --ride-type <type>        road, gravel, or event (default: road).
   --location <name>         Location name to seed in frontmatter.
   --region <region>         Location region to seed in frontmatter.
   --cover-image <path>      Confirmed local or remote cover image.
