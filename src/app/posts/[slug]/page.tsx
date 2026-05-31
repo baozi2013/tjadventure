@@ -6,12 +6,13 @@ import { compileMDX } from "next-mdx-remote/rsc";
 import remarkGfm from "remark-gfm";
 import rehypeSlug from "rehype-slug";
 import rehypeAutolinkHeadings from "rehype-autolink-headings";
-import { getAdjacentPosts, getAllPosts, getPostBySlug } from "@/lib/posts";
+import { getAdjacentPosts, getAllPosts, getPostBySlug, getRelatedPosts, type RelatedPost } from "@/lib/posts";
 import { mdxComponents } from "@/components/mdx-components";
 import { TripMap } from "@/components/trip-map";
 import { createPageMetadata } from "@/lib/metadata";
 import { getPairedCyclingEntryForPostSlug } from "@/lib/content-pairings";
 import { StoryRideSwitch } from "@/components/story-ride-switch";
+import { PostCard } from "@/components/post-card";
 
 type Params = {
   params: Promise<{ slug: string }>;
@@ -22,6 +23,13 @@ export const dynamicParams = false;
 export function generateStaticParams() {
   return getAllPosts().map((post) => ({ slug: post.slug }));
 }
+
+const RELATED_POST_LABELS: Record<RelatedPost["relation"], string> = {
+  "same-category": "同分类",
+  "same-region": "同地区",
+  "shared-tags": "相同标签",
+  recent: "最近更新",
+};
 
 export async function generateMetadata({ params }: Params): Promise<Metadata> {
   const { slug } = await params;
@@ -55,6 +63,7 @@ export default async function PostDetail({ params }: Params) {
   if (!post) notFound();
 
   const adjacentPosts = getAdjacentPosts(slug);
+  const relatedPosts = getRelatedPosts(slug);
   const pairedCyclingEntry = getPairedCyclingEntryForPostSlug(slug);
   const postSummary = {
     slug: post.slug,
@@ -150,6 +159,30 @@ export default async function PostDetail({ params }: Params) {
           <div className="mdx-content max-w-none">
             {content}
           </div>
+
+          {relatedPosts.length > 0 ? (
+            <section className="mt-12 border-t border-black/10 pt-8 dark:border-white/10">
+              <div className="mb-5 flex flex-wrap items-end justify-between gap-3">
+                <div>
+                  <p className="text-xs uppercase tracking-[0.18em] text-neutral-500">Related Stories</p>
+                  <h2 className="mt-1 text-2xl font-semibold tracking-tight">相关文章推荐</h2>
+                </div>
+                <p className="max-w-md text-sm leading-6 text-neutral-500">
+                  优先推荐同分类内容，再用同地区和相同标签补足。
+                </p>
+              </div>
+              <div className="grid gap-5 sm:grid-cols-2 xl:grid-cols-3">
+                {relatedPosts.map((relatedPost) => (
+                  <div key={relatedPost.slug} className="space-y-2">
+                    <span className="inline-flex rounded-full border border-black/10 px-3 py-1 text-xs text-neutral-500 dark:border-white/15">
+                      {RELATED_POST_LABELS[relatedPost.relation]}
+                    </span>
+                    <PostCard post={relatedPost} />
+                  </div>
+                ))}
+              </div>
+            </section>
+          ) : null}
 
           {(adjacentPosts.previous || adjacentPosts.next) ? (
             <section className="mt-12 border-t border-black/10 pt-8 dark:border-white/10">

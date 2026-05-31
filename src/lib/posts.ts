@@ -29,6 +29,10 @@ export type AdjacentPosts = {
   next: PostSummary | null;
 };
 
+export type RelatedPost = PostSummary & {
+  relation: "same-category" | "same-region" | "shared-tags" | "recent";
+};
+
 export type Heading = {
   level: 2 | 3;
   text: string;
@@ -360,6 +364,62 @@ export function getAdjacentPosts(slug: string): AdjacentPosts {
     previous: posts[currentIndex - 1] ?? null,
     next: posts[currentIndex + 1] ?? null,
   };
+}
+
+function getPostRegion(post: Pick<PostSummary, "category">) {
+  return post.category.split(" · ")[0];
+}
+
+function getTagOverlapScore(currentTags: Set<string>, candidateTags: string[] | undefined) {
+  if (!candidateTags || candidateTags.length === 0) return 0;
+
+  return candidateTags.reduce((score, tag) => score + (currentTags.has(tag) ? 1 : 0), 0);
+}
+
+export function getRelatedPosts(slug: string, limit = 3): RelatedPost[] {
+  const current = getAllPosts().find((post) => post.slug === slug);
+  if (!current) return [];
+
+  const currentTags = new Set(current.tags ?? []);
+  const currentRegion = getPostRegion(current);
+  const candidates = getAllPosts().filter((post) => post.slug !== slug);
+
+  const ranked = candidates
+    .map((post) => {
+      const sameCategory = post.category === current.category;
+      const sameRegion = getPostRegion(post) === currentRegion;
+      const tagOverlap = getTagOverlapScore(currentTags, post.tags);
+      const score = (sameCategory ? 80 : 0) + (sameRegion ? 30 : 0) + tagOverlap * 15;
+      const relation: RelatedPost["relation"] = sameCategory
+        ? "same-category"
+        : tagOverlap > 0
+          ? "shared-tags"
+          : sameRegion
+            ? "same-region"
+            : "recent";
+
+      return {
+        post,
+        relation,
+        score,
+      };
+    })
+    .sort((a, b) => b.score - a.score || +new Date(b.post.date) - +new Date(a.post.date));
+
+  const related = ranked.filter((item) => item.score > 0).slice(0, limit);
+
+  if (related.length < limit) {
+    const selectedSlugs = new Set(related.map((item) => item.post.slug));
+    const fallback = ranked
+      .filter((item) => item.score === 0 && !selectedSlugs.has(item.post.slug))
+      .slice(0, limit - related.length);
+    related.push(...fallback);
+  }
+
+  return related.map(({ post, relation }) => ({
+    ...post,
+    relation,
+  }));
 }
 
 export function getSearchIndex(): SearchIndexEntry[] {
