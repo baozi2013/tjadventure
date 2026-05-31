@@ -1,3 +1,4 @@
+import { getAllCyclingEntries } from "@/lib/cycling";
 import { getAllPosts } from "@/lib/posts";
 import { DEFAULT_DESCRIPTION, SITE_NAME, getAbsoluteUrl } from "@/lib/metadata";
 
@@ -12,21 +13,37 @@ function escapeXml(value: string) {
 
 export function GET() {
   const posts = getAllPosts();
+  const cyclingEntries = getAllCyclingEntries();
   const siteUrl = getAbsoluteUrl("/");
   const rssUrl = getAbsoluteUrl("/rss.xml");
 
-  const items = posts
-    .map((post) => {
-      const url = getAbsoluteUrl(`/posts/${post.slug}`);
+  const feedEntries = [
+    ...posts.map((post) => ({
+      title: post.title,
+      url: getAbsoluteUrl(`/posts/${post.slug}`),
+      date: post.date,
+      excerpt: post.excerpt,
+      category: post.category,
+    })),
+    ...cyclingEntries.map((entry) => ({
+      title: entry.title,
+      url: getAbsoluteUrl(`/cycling/${entry.slug}`),
+      date: entry.rideDate,
+      excerpt: entry.excerpt,
+      category: `${entry.location.region} · Cycling`,
+    })),
+  ].sort((a, b) => +new Date(b.date) - +new Date(a.date));
 
+  const items = feedEntries
+    .map((entry) => {
       return `
     <item>
-      <title>${escapeXml(post.title)}</title>
-      <link>${url}</link>
-      <guid>${url}</guid>
-      <pubDate>${new Date(post.date).toUTCString()}</pubDate>
-      <description>${escapeXml(post.excerpt)}</description>
-      <category>${escapeXml(post.category)}</category>
+      <title>${escapeXml(entry.title)}</title>
+      <link>${entry.url}</link>
+      <guid>${entry.url}</guid>
+      <pubDate>${new Date(entry.date).toUTCString()}</pubDate>
+      <description>${escapeXml(entry.excerpt)}</description>
+      <category>${escapeXml(entry.category)}</category>
     </item>`;
     })
     .join("");
