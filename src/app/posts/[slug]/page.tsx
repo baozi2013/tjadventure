@@ -10,6 +10,8 @@ import { getAdjacentPosts, getAllPosts, getPostBySlug } from "@/lib/posts";
 import { mdxComponents } from "@/components/mdx-components";
 import { TripMap } from "@/components/trip-map";
 import { createPageMetadata } from "@/lib/metadata";
+import { getPairedCyclingEntryForPostSlug } from "@/lib/content-pairings";
+import { StoryRideSwitch } from "@/components/story-ride-switch";
 
 type Params = {
   params: Promise<{ slug: string }>;
@@ -53,6 +55,11 @@ export default async function PostDetail({ params }: Params) {
   if (!post) notFound();
 
   const adjacentPosts = getAdjacentPosts(slug);
+  const pairedCyclingEntry = getPairedCyclingEntryForPostSlug(slug);
+  const postSummary = {
+    slug: post.slug,
+    ...post.frontmatter,
+  };
   const region = post.frontmatter.category.split(" · ")[0];
 
   const { content } = await compileMDX({
@@ -137,6 +144,8 @@ export default async function PostDetail({ params }: Params) {
               <p className="mt-2 font-medium">{post.locations.length} 个点位</p>
             </div>
           </section>
+
+          <StoryRideSwitch current="post" post={postSummary} cyclingEntry={pairedCyclingEntry} className="mb-8" />
 
           <div className="mdx-content max-w-none">
             {content}

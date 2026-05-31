@@ -25,6 +25,7 @@ const FUSE_OPTIONS: IFuseOptions<SearchIndexEntry> = {
     { name: "headings", weight: 0.1 },
     { name: "category", weight: 0.06 },
     { name: "body", weight: 0.04 },
+    { name: "searchText", weight: 0.04 },
   ],
 };
 

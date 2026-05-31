@@ -11,6 +11,8 @@ import { createPageMetadata } from "@/lib/metadata";
 import { mdxComponents } from "@/components/mdx-components";
 import { SiteNav } from "@/components/site-nav";
 import type { CyclingEntry } from "@/types/cycling";
+import { getPairedPostForCyclingSlug } from "@/lib/content-pairings";
+import { StoryRideSwitch } from "@/components/story-ride-switch";
 
 type Params = {
   params: Promise<{ slug: string }>;
@@ -131,6 +133,7 @@ export default async function CyclingDetailPage({ params }: Params) {
 
   if (!entry) notFound();
 
+  const pairedPost = getPairedPostForCyclingSlug(slug);
   const routeSummary = getRouteSummary(entry);
   const stats = [
     { label: "Distance", value: formatMeasurement(entry.distance) },
@@ -216,6 +219,8 @@ export default async function CyclingDetailPage({ params }: Params) {
               </div>
             ))}
           </section>
+
+          <StoryRideSwitch current="cycling" post={pairedPost} cyclingEntry={entry} />
 
           <section className="mt-6 rounded-2xl border border-black/10 bg-white p-5 dark:border-white/10 dark:bg-neutral-950">
             <div className="flex flex-wrap items-start justify-between gap-4">
