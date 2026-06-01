@@ -72,6 +72,35 @@ For a public activity, the script extracts the title, date, public image hint, a
 
 Use `--stdout` to preview generated MDX without writing a draft.
 
+### Sync Strava rides through OAuth
+
+For authorized Strava data, keep credentials outside the repository. The scripts
+load `STRAVA_CLIENT_ID` and `STRAVA_CLIENT_SECRET` from `~/.openclaw/.env` and
+store OAuth tokens in `~/.openclaw/strava-token.json` by default.
+
+```bash
+npm run strava:oauth -- auth-url
+npm run strava:oauth -- exchange --code <code-from-redirect-url>
+npm run strava:oauth -- status
+```
+
+After the token is stored, sync authorized ride metadata into the unpublished
+draft checkpoint:
+
+```bash
+npm run sync:strava-cycling -- --after 2026-01-01 --limit 10
+```
+
+To sync one activity:
+
+```bash
+npm run sync:strava-cycling -- --activity-id 1234567890 --ride-type road
+```
+
+The sync command writes to `content/cycling/_drafts/`, which is ignored by the
+public collection. Review title, stats, route, privacy, and images before moving
+any draft into `content/cycling/`.
+
 ## Deploy on NAS (Docker)
 
 This repo includes:

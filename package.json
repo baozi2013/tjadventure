@@ -6,6 +6,8 @@
     "dev": "next dev --webpack",
     "validate:posts": "node scripts/validate-posts.mjs",
     "import:strava-cycling": "node scripts/import-strava-cycling.mjs",
+    "strava:oauth": "node scripts/strava-oauth.mjs",
+    "sync:strava-cycling": "node scripts/sync-strava-cycling.mjs",
     "build": "npm run validate:posts && next build",
     "start": "next start",
     "lint": "eslint"
