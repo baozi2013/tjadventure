@@ -2,6 +2,7 @@
 
 import dynamic from "next/dynamic";
 import type { TripLocation } from "@/types/posts";
+import type { MapRouteTrack } from "@/types/maps";
 
 const TripMapInner = dynamic(
   () => import("@/components/trip-map-inner").then((module) => module.TripMapInner),
@@ -19,10 +20,11 @@ type TripMapProps = {
   title: string;
   locations: TripLocation[];
   fallbackImage: string;
+  track?: MapRouteTrack;
 };
 
-export function TripMap({ title, locations, fallbackImage }: TripMapProps) {
-  if (locations.length === 0) {
+export function TripMap({ title, locations, fallbackImage, track }: TripMapProps) {
+  if (locations.length === 0 && !track) {
     return null;
   }
 
@@ -32,28 +34,32 @@ export function TripMap({ title, locations, fallbackImage }: TripMapProps) {
         <div>
           <h2 className="text-base font-semibold sm:text-lg">行程地图</h2>
           <p className="text-sm text-neutral-600 dark:text-neutral-300">
-            {title} · 共 {locations.length} 个点位
+            {title}
+            {locations.length > 0 ? ` · 共 ${locations.length} 个点位` : ""}
+            {track ? " · 含路线轨迹" : ""}
           </p>
         </div>
       </div>
 
-      <TripMapInner locations={locations} fallbackImage={fallbackImage} />
+      <TripMapInner locations={locations} fallbackImage={fallbackImage} track={track} />
 
-      <ol className="mt-4 grid gap-2 text-sm text-neutral-700 dark:text-neutral-200 sm:grid-cols-2">
-        {locations.map((location, index) => (
-          <li
-            key={`${location.name}-${location.lat}-${location.lng}`}
-            className="rounded-lg border border-black/10 bg-neutral-50 px-3 py-2 dark:border-white/10 dark:bg-neutral-900/50"
-          >
-            <p className="font-medium text-neutral-900 dark:text-neutral-100">
-              {index + 1}. {location.name}
-            </p>
-            {location.note ? (
-              <p className="mt-1 text-xs text-neutral-600 dark:text-neutral-300">{location.note}</p>
-            ) : null}
-          </li>
-        ))}
-      </ol>
+      {locations.length > 0 ? (
+        <ol className="mt-4 grid gap-2 text-sm text-neutral-700 dark:text-neutral-200 sm:grid-cols-2">
+          {locations.map((location, index) => (
+            <li
+              key={`${location.name}-${location.lat}-${location.lng}`}
+              className="rounded-lg border border-black/10 bg-neutral-50 px-3 py-2 dark:border-white/10 dark:bg-neutral-900/50"
+            >
+              <p className="font-medium text-neutral-900 dark:text-neutral-100">
+                {index + 1}. {location.name}
+              </p>
+              {location.note ? (
+                <p className="mt-1 text-xs text-neutral-600 dark:text-neutral-300">{location.note}</p>
+              ) : null}
+            </li>
+          ))}
+        </ol>
+      ) : null}
     </section>
   );
 }

@@ -17,6 +17,7 @@ const CYCLING_DISTANCE_UNITS = new Set(["mi", "km"]);
 const CYCLING_ELEVATION_UNITS = new Set(["ft", "m"]);
 const CYCLING_ROUTE_SURFACES = new Set(["road", "gravel", "paved-trail", "mixed"]);
 const CYCLING_IMAGE_ROLES = new Set(["cover", "route", "gallery"]);
+const MAP_TRACK_FORMATS = new Set(["geojson"]);
 
 function isRecord(value) {
   return typeof value === "object" && value !== null && !Array.isArray(value);
@@ -269,6 +270,77 @@ function validateCyclingImagePath(rawPath, fieldName, filePath, errors) {
   }
 }
 
+function validateCyclingAssetPath(rawPath, fieldName, filePath, errors) {
+  if (typeof rawPath !== "string" || rawPath.trim().length === 0) {
+    errors.push(`"${fieldName}" must be a non-empty string.`);
+    return null;
+  }
+
+  const assetPath = rawPath.trim();
+  if (assetPath.startsWith("/")) {
+    validateLocalPublicAsset(assetPath, fieldName, filePath, errors);
+    return path.join(PUBLIC_DIR, assetPath.slice(1));
+  }
+
+  if (HTTP_FORMAT.test(assetPath)) {
+    return null;
+  }
+
+  errors.push(`"${fieldName}" must be a local "/..." path or http(s) URL.`);
+  return null;
+}
+
+function hasGeoJsonLineGeometry(geometry) {
+  if (!isRecord(geometry)) return false;
+
+  if (geometry.type === "LineString") {
+    return Array.isArray(geometry.coordinates) && geometry.coordinates.length >= 2;
+  }
+
+  if (geometry.type === "MultiLineString") {
+    return (
+      Array.isArray(geometry.coordinates) &&
+      geometry.coordinates.some((line) => Array.isArray(line) && line.length >= 2)
+    );
+  }
+
+  if (geometry.type === "GeometryCollection") {
+    return Array.isArray(geometry.geometries) && geometry.geometries.some(hasGeoJsonLineGeometry);
+  }
+
+  return false;
+}
+
+function hasGeoJsonTrack(value) {
+  if (!isRecord(value)) return false;
+
+  if (value.type === "FeatureCollection") {
+    return Array.isArray(value.features) && value.features.some((feature) => hasGeoJsonTrack(feature));
+  }
+
+  if (value.type === "Feature") {
+    return hasGeoJsonLineGeometry(value.geometry);
+  }
+
+  return hasGeoJsonLineGeometry(value);
+}
+
+function validateGeoJsonTrackFile(absolutePath, fieldName, errors) {
+  if (!absolutePath || !fs.existsSync(absolutePath)) return;
+
+  let parsed;
+  try {
+    parsed = JSON.parse(fs.readFileSync(absolutePath, "utf8"));
+  } catch (error) {
+    errors.push(`"${fieldName}" points to invalid GeoJSON: ${error.message}.`);
+    return;
+  }
+
+  if (!hasGeoJsonTrack(parsed)) {
+    errors.push(`"${fieldName}" GeoJSON must include a LineString or MultiLineString track.`);
+  }
+}
+
 function validateStravaUrl(rawUrl, errors) {
   if (typeof rawUrl !== "string" || rawUrl.trim().length === 0) {
     errors.push('"stravaUrl" must be a non-empty string.');
@@ -339,7 +411,31 @@ function validateCyclingRoute(route, errors) {
     }
   }
 
-  if (!route.name && !route.start && !route.finish && !route.surface) {
+  if (route.track != null) {
+    if (!isRecord(route.track)) {
+      errors.push('"route.track" must be an object when provided.');
+    } else {
+      const absoluteTrackPath = validateCyclingAssetPath(route.track.src, "route.track.src", "", errors);
+
+      if (route.track.format != null && (typeof route.track.format !== "string" || !MAP_TRACK_FORMATS.has(route.track.format))) {
+        errors.push(`"route.track.format" must be one of: ${Array.from(MAP_TRACK_FORMATS).join(", ")}.`);
+      }
+
+      if (route.track.title != null && (typeof route.track.title !== "string" || route.track.title.trim().length === 0)) {
+        errors.push('"route.track.title" must be a non-empty string when provided.');
+      }
+
+      if (route.track.color != null && (typeof route.track.color !== "string" || route.track.color.trim().length === 0)) {
+        errors.push('"route.track.color" must be a non-empty string when provided.');
+      }
+
+      if ((route.track.format ?? "geojson") === "geojson") {
+        validateGeoJsonTrackFile(absoluteTrackPath, "route.track.src", errors);
+      }
+    }
+  }
+
+  if (!route.name && !route.start && !route.finish && !route.surface && !route.track) {
     errors.push('"route" must include at least one field when provided.');
   }
 }

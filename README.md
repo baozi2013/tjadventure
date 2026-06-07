@@ -44,6 +44,7 @@ Cycling rides live in `content/cycling/*.mdx` as a separate collection from trav
 - `elevationGain`: `{ value, unit }` with `ft` or `m`
 - `movingTime`: `HHH:MM:SS`, for example `5:12:30`
 - `location`: `{ name, region }`, with optional `lat`, `lng`, and `note`
+- `route.track`: optional GeoJSON route overlay, for example `{ src: "/tracks/lake-tahoe-2024.geojson", format: "geojson" }`
 - `stravaUrl`: a Strava activity URL
 - `coverImage` and optional `images`: local `/public` assets or http(s) URLs
 

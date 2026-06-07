@@ -1,3 +1,5 @@
+import type { MapRouteTrack } from "./maps";
+
 export const CYCLING_RIDE_TYPES = ["road", "gravel", "event"] as const;
 
 export type CyclingRideType = (typeof CYCLING_RIDE_TYPES)[number];
@@ -37,6 +39,7 @@ export type CyclingRoute = {
   start?: string;
   finish?: string;
   surface?: CyclingRouteSurface[];
+  track?: MapRouteTrack;
 };
 
 export type CyclingImage = {

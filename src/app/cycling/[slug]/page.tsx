@@ -11,8 +11,10 @@ import { createPageMetadata } from "@/lib/metadata";
 import { mdxComponents } from "@/components/mdx-components";
 import { SiteNav } from "@/components/site-nav";
 import type { CyclingEntry } from "@/types/cycling";
+import type { TripLocation } from "@/types/posts";
 import { getPairedPostForCyclingSlug } from "@/lib/content-pairings";
 import { StoryRideSwitch } from "@/components/story-ride-switch";
+import { TripMap } from "@/components/trip-map";
 
 type Params = {
   params: Promise<{ slug: string }>;
@@ -86,7 +88,24 @@ function getRouteSummary(entry: CyclingEntry) {
     route.start ? { label: "Start", value: route.start } : null,
     route.finish ? { label: "Finish", value: route.finish } : null,
     route.surface ? { label: "Surface", value: route.surface.map(formatSurface).join(" / ") } : null,
+    route.track ? { label: "Track", value: route.track.title ?? "GeoJSON route overlay" } : null,
   ].filter((item): item is { label: string; value: string } => Boolean(item));
+}
+
+function getMapLocations(entry: CyclingEntry): TripLocation[] {
+  if (entry.location.lat == null || entry.location.lng == null) {
+    return [];
+  }
+
+  return [
+    {
+      name: entry.location.name,
+      lat: entry.location.lat,
+      lng: entry.location.lng,
+      note: entry.location.note ?? entry.location.region,
+      image: entry.coverImage,
+    },
+  ];
 }
 
 function SourceBlock({ entry }: { entry: CyclingEntry }) {
@@ -135,6 +154,7 @@ export default async function CyclingDetailPage({ params }: Params) {
 
   const pairedPost = getPairedPostForCyclingSlug(slug);
   const routeSummary = getRouteSummary(entry);
+  const mapLocations = getMapLocations(entry);
   const stats = [
     { label: "Distance", value: formatMeasurement(entry.distance) },
     { label: "Elevation", value: formatMeasurement(entry.elevationGain) },
@@ -254,6 +274,17 @@ export default async function CyclingDetailPage({ params }: Params) {
                 ))}
               </div>
             </section>
+          ) : null}
+
+          {mapLocations.length > 0 || entry.route?.track ? (
+            <div className="mt-6">
+              <TripMap
+                title={`${entry.location.name} route`}
+                locations={mapLocations}
+                fallbackImage={entry.coverImage}
+                track={entry.route?.track}
+              />
+            </div>
           ) : null}
 
           <div className="mt-6 grid gap-5 lg:grid-cols-2">

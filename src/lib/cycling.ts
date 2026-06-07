@@ -21,6 +21,7 @@ import {
   type CyclingRouteSurface,
   type CyclingSummary,
 } from "@/types/cycling";
+import { MAP_TRACK_FORMATS, type MapRouteTrack, type MapTrackFormat } from "@/types/maps";
 import type { SearchIndexEntry } from "@/types/search";
 
 const CYCLING_DIR = path.join(process.cwd(), "content/cycling");
@@ -120,6 +121,18 @@ function validateImagePath(rawImagePath: string, fieldName: string, filePath: st
 
   if (/^https?:\/\//.test(rawImagePath)) {
     return rawImagePath;
+  }
+
+  failCyclingFrontmatter(filePath, `"${fieldName}" must be an absolute path (starting with "/") or an http(s) URL.`);
+}
+
+function validateAssetPath(rawPath: string, fieldName: string, filePath: string): string {
+  if (rawPath.startsWith("/")) {
+    return validateLocalAssetPath(rawPath, fieldName, filePath);
+  }
+
+  if (/^https?:\/\//.test(rawPath)) {
+    return rawPath;
   }
 
   failCyclingFrontmatter(filePath, `"${fieldName}" must be an absolute path (starting with "/") or an http(s) URL.`);
@@ -282,6 +295,36 @@ function readOptionalSurface(value: RawFrontmatter, filePath: string): CyclingRo
   });
 }
 
+function readOptionalTrack(value: RawFrontmatter, filePath: string): MapRouteTrack | undefined {
+  const rawTrack = value.track;
+  if (rawTrack == null) return undefined;
+
+  if (!isObjectRecord(rawTrack)) {
+    failCyclingFrontmatter(filePath, `"route.track" must be an object when provided.`);
+  }
+
+  const src = readOptionalText(rawTrack, "src", filePath, "route.track.src");
+  if (!src) {
+    failCyclingFrontmatter(filePath, `"route.track" must include "src".`);
+  }
+
+  const rawFormat = readOptionalText(rawTrack, "format", filePath, "route.track.format");
+  const format = rawFormat ?? "geojson";
+  if (!MAP_TRACK_FORMATS.includes(format as MapTrackFormat)) {
+    failCyclingFrontmatter(filePath, `"route.track.format" must be one of: ${MAP_TRACK_FORMATS.join(", ")}.`);
+  }
+
+  const title = readOptionalText(rawTrack, "title", filePath, "route.track.title");
+  const color = readOptionalText(rawTrack, "color", filePath, "route.track.color");
+
+  return {
+    src: validateAssetPath(src, "route.track.src", filePath),
+    format: format as MapTrackFormat,
+    title,
+    color,
+  };
+}
+
 function readOptionalRoute(frontmatter: RawFrontmatter, filePath: string): CyclingRoute | undefined {
   const value = frontmatter.route;
   if (value == null) return undefined;
@@ -295,9 +338,10 @@ function readOptionalRoute(frontmatter: RawFrontmatter, filePath: string): Cycli
     start: readOptionalText(value, "start", filePath, "route.start"),
     finish: readOptionalText(value, "finish", filePath, "route.finish"),
     surface: readOptionalSurface(value, filePath),
+    track: readOptionalTrack(value, filePath),
   };
 
-  if (!route.name && !route.start && !route.finish && !route.surface) {
+  if (!route.name && !route.start && !route.finish && !route.surface && !route.track) {
     failCyclingFrontmatter(filePath, `"route" must include at least one field when provided.`);
   }
 
@@ -472,7 +516,7 @@ export function getCyclingSearchIndex(): SearchIndexEntry[] {
       const fullPath = path.join(CYCLING_DIR, file);
       const entry = readParsedCyclingEntry(fullPath, slug);
       const headings = entry.headings.map((heading) => heading.text);
-      const routeTerms = [entry.route?.name, entry.route?.start, entry.route?.finish].filter(
+      const routeTerms = [entry.route?.name, entry.route?.start, entry.route?.finish, entry.route?.track?.title].filter(
         (term): term is string => Boolean(term),
       );
       const locations = [
