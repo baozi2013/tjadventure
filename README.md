@@ -91,6 +91,14 @@ draft checkpoint:
 npm run sync:strava-cycling -- --after 2026-01-01 --limit 10
 ```
 
+By default the OAuth sync only considers longer rides at or above `50 mi`, so
+short lunch rides, indoor rides, and quick errands do not become drafts. Adjust
+the threshold when needed:
+
+```bash
+npm run sync:strava-cycling -- --after 2026-01-01 --limit 10 --min-distance-mi 60
+```
+
 To sync one activity:
 
 ```bash

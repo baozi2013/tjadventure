@@ -17,6 +17,7 @@ Options:
   --activity-json <path>    Generate from a saved Strava activity JSON file, for review/testing.
   --after <YYYY-MM-DD>      Fetch athlete activities after this date.
   --limit <number>          Maximum activities to consider (default: 10, max: 200).
+  --min-distance-mi <mi>    Only sync rides at or above this distance (default: 50).
   --ride-type <type>        Force road, gravel, or event; otherwise infer from sport_type.
   --location <name>         Override draft location name.
   --region <region>         Override draft location region.
@@ -43,6 +44,7 @@ function parseArguments(args) {
     activityJson: "",
     after: "",
     limit: 10,
+    minDistanceMi: 50,
     rideType: "",
     location: "",
     region: "",
@@ -71,6 +73,7 @@ function parseArguments(args) {
       "--activity-json": "activityJson",
       "--after": "after",
       "--limit": "limit",
+      "--min-distance-mi": "minDistanceMi",
       "--ride-type": "rideType",
       "--location": "location",
       "--region": "region",
@@ -93,6 +96,11 @@ function parseArguments(args) {
   options.limit = Number.parseInt(String(options.limit), 10);
   if (!Number.isInteger(options.limit) || options.limit < 1 || options.limit > 200) {
     throw new Error("--limit must be an integer between 1 and 200.");
+  }
+
+  options.minDistanceMi = Number.parseFloat(String(options.minDistanceMi));
+  if (!Number.isFinite(options.minDistanceMi) || options.minDistanceMi < 0) {
+    throw new Error("--min-distance-mi must be a number greater than or equal to 0.");
   }
 
   if (options.after && !/^\d{4}-\d{2}-\d{2}$/.test(options.after)) {
@@ -127,6 +135,10 @@ function secondsToClock(seconds) {
 
 function metersToMiles(meters) {
   return Math.round((meters / 1609.344) * 10) / 10;
+}
+
+function getDistanceMiles(activity) {
+  return metersToMiles(Number(activity.distance ?? 0));
 }
 
 function metersToFeet(meters) {
@@ -416,11 +428,14 @@ async function writeDraft({ slug, draft, activityId }, options, existingIndex) {
 async function main() {
   const options = parseArguments(process.argv.slice(2));
   await loadEnvFile();
-  const activities = (await fetchActivities(options)).filter(isRideActivity).slice(0, options.limit);
+  const activities = (await fetchActivities(options))
+    .filter(isRideActivity)
+    .filter((activity) => getDistanceMiles(activity) >= options.minDistanceMi)
+    .slice(0, options.limit);
   const existingIndex = await getExistingCyclingIndex();
 
   if (activities.length === 0) {
-    console.log("[sync-strava-cycling] No ride activities matched.");
+    console.log(`[sync-strava-cycling] No ride activities matched >= ${options.minDistanceMi} mi.`);
     return;
   }
 
