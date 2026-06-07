@@ -23,10 +23,15 @@ npm run build
 - `src/app`: App Router routes, metadata routes, RSS, sitemap, and robots.
 - `src/components`: Shared UI for navigation, cards, maps, MDX rendering, Strava embeds, and search.
 - `src/lib`: Content parsing, validation helpers, cycling helpers, and SEO metadata utilities.
+- `docs`: Architecture notes and implementation decision records, including the i18n evaluation.
 - `content/posts`: Travel story MDX files.
 - `content/cycling`: Cycling entry MDX files.
 - `public`: Local image and branding assets.
 - `scripts`: Content validation, Strava draft import, and NAS deployment scripts.
+
+## Architecture Notes
+
+- [F1 i18n evaluation](docs/i18n-evaluation.md): recommended multilingual routing, content, SEO, search, and rollout plan.
 
 ## Content Models
 
