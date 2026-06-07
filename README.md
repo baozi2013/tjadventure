@@ -101,6 +101,17 @@ The sync command writes to `content/cycling/_drafts/`, which is ignored by the
 public collection. Review title, stats, route, privacy, and images before moving
 any draft into `content/cycling/`.
 
+Run the review checkpoint before publishing a synced draft:
+
+```bash
+npm run review:strava-cycling --
+npm run review:strava-cycling -- --slug test-gravel-loop-2026 --strict
+```
+
+The review command checks for unresolved `TODO` markers, missing local assets,
+duplicate Strava activity URLs, and draft readiness. It reports status only; it
+does not move or publish files.
+
 ## Deploy on NAS (Docker)
 
 This repo includes:

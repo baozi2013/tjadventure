@@ -1,5 +1,6 @@
 import fs from "node:fs/promises";
 import path from "node:path";
+import matter from "gray-matter";
 import { stravaApi, loadEnvFile } from "./lib/strava-client.mjs";
 
 const ROOT_DIR = process.cwd();
@@ -161,6 +162,18 @@ function isRideActivity(activity) {
   return sportType.includes("ride") || sportType.includes("bike") || sportType.includes("cycling");
 }
 
+function getActivityIdFromStravaUrl(rawUrl) {
+  if (typeof rawUrl !== "string") return "";
+
+  try {
+    const url = new URL(rawUrl);
+    const match = url.pathname.match(/^\/activities\/(\d+)(?:\/|$)/);
+    return match?.[1] ?? "";
+  } catch {
+    return "";
+  }
+}
+
 function buildDraft(activity, options) {
   const activityId = String(activity.id);
   const rideDate = String(activity.start_date_local ?? activity.start_date ?? "").slice(0, 10) || "TODO: YYYY-MM-DD";
@@ -261,6 +274,56 @@ async function pathExists(filePath) {
   }
 }
 
+async function listMdxFiles(directory) {
+  try {
+    const entries = await fs.readdir(directory, { withFileTypes: true });
+    return entries
+      .filter((entry) => entry.isFile() && entry.name.endsWith(".mdx") && !entry.name.startsWith("_"))
+      .map((entry) => path.join(directory, entry.name));
+  } catch (error) {
+    if (error.code === "ENOENT") return [];
+    throw error;
+  }
+}
+
+async function readStravaUrlFromFile(filePath) {
+  try {
+    const raw = await fs.readFile(filePath, "utf8");
+    const { data } = matter(raw);
+    return typeof data.stravaUrl === "string" ? data.stravaUrl : "";
+  } catch {
+    return "";
+  }
+}
+
+async function getExistingCyclingIndex() {
+  const index = new Map();
+  const publishedFiles = await listMdxFiles(CYCLING_DIR);
+  const draftFiles = await listMdxFiles(DRAFTS_DIR);
+
+  for (const filePath of publishedFiles) {
+    const activityId = getActivityIdFromStravaUrl(await readStravaUrlFromFile(filePath));
+    if (activityId) {
+      index.set(activityId, {
+        kind: "published",
+        path: filePath,
+      });
+    }
+  }
+
+  for (const filePath of draftFiles) {
+    const activityId = getActivityIdFromStravaUrl(await readStravaUrlFromFile(filePath));
+    if (activityId && !index.has(activityId)) {
+      index.set(activityId, {
+        kind: "draft",
+        path: filePath,
+      });
+    }
+  }
+
+  return index;
+}
+
 async function fetchActivities(options) {
   if (options.activityJson) {
     const raw = await fs.readFile(options.activityJson, "utf8");
@@ -283,11 +346,40 @@ async function fetchActivities(options) {
   return stravaApi("/api/v3/athlete/activities", { searchParams });
 }
 
-async function writeDraft({ slug, draft, activityId }, options) {
+async function writeDraft({ slug, draft, activityId }, options, existingIndex) {
+  const existing = existingIndex.get(activityId);
+  if (existing?.kind === "published") {
+    return {
+      action: "skipped-published",
+      path: existing.path,
+      activityId,
+    };
+  }
+
+  if (existing?.kind === "draft") {
+    if (!options.force) {
+      return {
+        action: "skipped-existing-draft",
+        path: existing.path,
+        activityId,
+      };
+    }
+
+    if (!options.dryRun) {
+      await fs.writeFile(existing.path, draft, "utf8");
+    }
+
+    return {
+      action: options.dryRun ? "would-update-draft" : "updated-draft",
+      path: existing.path,
+      activityId,
+    };
+  }
+
   const publishedPath = path.join(CYCLING_DIR, `${slug}.mdx`);
   if (await pathExists(publishedPath)) {
     return {
-      action: "skipped-published",
+      action: "skipped-published-slug",
       path: publishedPath,
       activityId,
     };
@@ -325,6 +417,7 @@ async function main() {
   const options = parseArguments(process.argv.slice(2));
   await loadEnvFile();
   const activities = (await fetchActivities(options)).filter(isRideActivity).slice(0, options.limit);
+  const existingIndex = await getExistingCyclingIndex();
 
   if (activities.length === 0) {
     console.log("[sync-strava-cycling] No ride activities matched.");
@@ -333,7 +426,7 @@ async function main() {
 
   const results = [];
   for (const activity of activities) {
-    results.push(await writeDraft(buildDraft(activity, options), options));
+    results.push(await writeDraft(buildDraft(activity, options), options, existingIndex));
   }
 
   for (const result of results) {
