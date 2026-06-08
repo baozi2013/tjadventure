@@ -1,43 +1,59 @@
 import type { Metadata } from "next";
 import Image from "next/image";
+import { getTranslations, setRequestLocale } from "next-intl/server";
 import { SiteNav } from "@/components/site-nav";
 import { createPageMetadata } from "@/lib/metadata";
+import { resolveLocale, type LocaleParams } from "@/i18n/locale";
 
-export const metadata: Metadata = createPageMetadata({
-  title: "About Us",
-  description: "Meet the TJ Adventure family behind the blog, the planning style, and the camera gear that documents each trip.",
-  pathname: "/about",
-  image: "/about/tian.png",
-  keywords: ["about TJ Adventure", "family travel bloggers", "travel photography family"],
-});
+type PageProps = {
+  params: LocaleParams;
+};
 
-export default function AboutPage() {
+export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
+  const locale = await resolveLocale(params);
+  const t = await getTranslations({ locale, namespace: "About" });
+
+  return createPageMetadata({
+    title: t("metadataTitle"),
+    description: t("metadataDescription"),
+    pathname: "/about",
+    locale,
+    image: "/about/tian.png",
+    keywords: ["about TJ Adventure", "family travel bloggers", "travel photography family"],
+  });
+}
+
+export default async function AboutPage({ params }: PageProps) {
+  const locale = await resolveLocale(params);
+  setRequestLocale(locale);
+  const t = await getTranslations({ locale, namespace: "About" });
+
   return (
     <main className="mx-auto min-h-screen w-full max-w-4xl px-5 pb-20 pt-10 sm:px-8 lg:px-10">
       <SiteNav current="about" />
 
       <section className="rounded-3xl border border-black/10 bg-white p-7 dark:border-white/10 dark:bg-neutral-950">
-        <h1 className="text-3xl font-semibold tracking-tight">About Us</h1>
+        <h1 className="text-3xl font-semibold tracking-tight">{t("title")}</h1>
         <p className="mt-4 text-base leading-8 text-neutral-700 dark:text-neutral-300">
-          四口幸福之家，爱旅游，爱拍照，爱运动。
+          {t("intro")}
         </p>
 
         <div className="mt-8 space-y-7">
           <article>
             <h2 className="text-xl font-semibold">Tian 天</h2>
             <p className="mt-2 text-base leading-8 text-neutral-700 dark:text-neutral-300">
-              负责把行程和后勤安排得明明白白，爱拍美女和美景，骑行人。
+              {t("tian1")}
             </p>
             <p className="mt-2 text-base leading-8 text-neutral-700 dark:text-neutral-300">
-              导游，计划精准，行程丰富，日常维护博客网站。
+              {t("tian2")}
             </p>
             <p className="mt-2 text-base leading-8 text-neutral-700 dark:text-neutral-300">
-              拍摄设备：iPhone 17、GoPro 10、Sony a6300。
+              {t("tianGear")}
             </p>
             <div className="relative mt-4 h-72 w-full overflow-hidden rounded-2xl border border-black/10 sm:h-96 dark:border-white/10">
               <Image
                 src="/about/tian.png"
-                alt="Tian 在 Lake Tahoe"
+                alt={t("tianAlt")}
                 fill
                 className="object-cover"
                 sizes="(max-width: 640px) 100vw, 768px"
@@ -48,18 +64,18 @@ export default function AboutPage() {
           <article>
             <h2 className="text-xl font-semibold">Jane 静</h2>
             <p className="mt-2 text-base leading-8 text-neutral-700 dark:text-neutral-300">
-              言情小说爱好者，只负责美丽。
+              {t("jane1")}
             </p>
             <p className="mt-2 text-base leading-8 text-neutral-700 dark:text-neutral-300">
-              一家之主，两娃的辣妈，运动健将，lululemon 深度患者，just dance 达人。
+              {t("jane2")}
             </p>
             <p className="mt-2 text-base leading-8 text-neutral-700 dark:text-neutral-300">
-              拍摄设备：iPhone 16 Pro。
+              {t("janeGear")}
             </p>
             <div className="relative mt-4 h-64 w-full overflow-hidden rounded-2xl border border-black/10 sm:h-80 dark:border-white/10">
               <Image
                 src="/trips/palm-spring-2025/day1-3.jpg"
-                alt="Jane 在 Joshua Tree"
+                alt={t("janeAlt")}
                 fill
                 className="object-cover"
                 sizes="(max-width: 640px) 100vw, 768px"

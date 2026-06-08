@@ -1,4 +1,5 @@
-import Link from "next/link";
+import { useTranslations } from "next-intl";
+import { Link } from "@/i18n/navigation";
 import type { PostSummary } from "@/lib/posts";
 import type { CyclingSummary } from "@/types/cycling";
 
@@ -17,6 +18,7 @@ type SwitchItemProps = {
   href: string;
   isCurrent: boolean;
   cta: string;
+  currentLabel: string;
   className?: string;
 };
 
@@ -36,6 +38,7 @@ function SwitchItem({
   href,
   isCurrent,
   cta,
+  currentLabel,
   className,
 }: SwitchItemProps) {
   const content = (
@@ -53,7 +56,7 @@ function SwitchItem({
               : "border-black/10 text-neutral-600 dark:border-white/15 dark:text-neutral-300",
           )}
         >
-          {isCurrent ? "当前页面" : cta}
+          {isCurrent ? currentLabel : cta}
         </span>
       </div>
       <p className="mt-3 text-sm leading-6 text-neutral-600 dark:text-neutral-300">{description}</p>
@@ -83,6 +86,8 @@ function SwitchItem({
 }
 
 export function StoryRideSwitch({ current, post, cyclingEntry, className }: StoryRideSwitchProps) {
+  const t = useTranslations("StoryRideSwitch");
+
   if (!post || !cyclingEntry) return null;
 
   return (
@@ -95,35 +100,37 @@ export function StoryRideSwitch({ current, post, cyclingEntry, className }: Stor
     >
       <div className="border-b border-black/10 p-5 dark:border-white/10 sm:flex sm:items-end sm:justify-between sm:gap-6 sm:p-6">
         <div>
-          <p className="text-xs uppercase tracking-[0.18em] text-neutral-500">Trip Pair</p>
+          <p className="text-xs uppercase tracking-[0.18em] text-neutral-500">{t("eyebrow")}</p>
           <h2 id="story-ride-switch-title" className="mt-2 text-2xl font-semibold tracking-tight">
-            同一趟旅程的两个视角
+            {t("title")}
           </h2>
         </div>
         <p className="mt-3 max-w-xl text-sm leading-6 text-neutral-600 dark:text-neutral-300 sm:mt-0 sm:text-right">
-          在家庭游记和骑行记录之间切换：一个看完整行程、照片和陪伴，一个看路线、数据和 Strava 细节。
+          {t("intro")}
         </p>
       </div>
 
       <div className="grid sm:grid-cols-2">
         <SwitchItem
-          label="家庭游记"
+          label={t("storyLabel")}
           title={post.title}
           meta={`${post.date} · ${post.readTime}`}
-          description="完整行程、照片和家庭视角都在这里。"
+          description={t("storyDescription")}
           href={`/posts/${post.slug}`}
           isCurrent={current === "post"}
-          cta="查看游记"
+          cta={t("storyCta")}
+          currentLabel={t("currentPage")}
           className="border-b border-black/10 dark:border-white/10 sm:border-b-0 sm:border-r"
         />
         <SwitchItem
-          label="骑行记录"
+          label={t("rideLabel")}
           title={cyclingEntry.title}
           meta={`${cyclingEntry.rideDate} · ${formatMeasurement(cyclingEntry.distance)} · ${cyclingEntry.movingTime}`}
-          description="路线、距离、爬升和骑行当天的关键细节。"
+          description={t("rideDescription")}
           href={`/cycling/${cyclingEntry.slug}`}
           isCurrent={current === "cycling"}
-          cta="查看 ride log"
+          cta={t("rideCta")}
+          currentLabel={t("currentPage")}
         />
       </div>
     </section>

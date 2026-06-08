@@ -1,23 +1,38 @@
 import type { Metadata } from "next";
 import { Suspense } from "react";
+import { getTranslations, setRequestLocale } from "next-intl/server";
 import { SearchExperience } from "@/components/search-experience";
 import { SiteNav } from "@/components/site-nav";
 import { createPageMetadata } from "@/lib/metadata";
+import { resolveLocale, type LocaleParams } from "@/i18n/locale";
 
-export const metadata: Metadata = {
-  ...createPageMetadata({
-    title: "Search Stories and Rides",
-    description: "Search TJ Adventure trip stories and cycling rides by destination, tags, landmarks, and route details.",
-    pathname: "/search",
-    keywords: ["travel search", "cycling search", "trip finder", "destination search", "route search"],
-  }),
-  robots: {
-    index: false,
-    follow: true,
-  },
+type PageProps = {
+  params: LocaleParams;
 };
 
-export default function SearchPage() {
+export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
+  const locale = await resolveLocale(params);
+  const t = await getTranslations({ locale, namespace: "Search" });
+
+  return {
+    ...createPageMetadata({
+      title: t("metadataTitle"),
+      description: t("metadataDescription"),
+      pathname: "/search",
+      locale,
+      keywords: ["travel search", "cycling search", "trip finder", "destination search", "route search"],
+    }),
+    robots: {
+      index: false,
+      follow: true,
+    },
+  };
+}
+
+export default async function SearchPage({ params }: PageProps) {
+  const locale = await resolveLocale(params);
+  setRequestLocale(locale);
+
   return (
     <main className="mx-auto min-h-screen w-full max-w-6xl px-5 pb-20 pt-10 sm:px-8 lg:px-10">
       <SiteNav current="search" />

@@ -1,12 +1,15 @@
-import Link from "next/link";
+import { Suspense } from "react";
+import { useTranslations } from "next-intl";
+import { Link } from "@/i18n/navigation";
+import { LanguageSwitcher } from "@/components/language-switcher";
 
 const NAV_ITEMS = [
-  { href: "/", label: "Home", key: "home" },
-  { href: "/about", label: "About Us", key: "about" },
-  { href: "/gears", label: "Gears", key: "gears" },
-  { href: "/trips", label: "All Trips", key: "trips" },
-  { href: "/cycling", label: "Cycling", key: "cycling" },
-  { href: "/search", label: "Search", key: "search" },
+  { href: "/", labelKey: "home", key: "home" },
+  { href: "/about", labelKey: "about", key: "about" },
+  { href: "/gears", labelKey: "gears", key: "gears" },
+  { href: "/trips", labelKey: "trips", key: "trips" },
+  { href: "/cycling", labelKey: "cycling", key: "cycling" },
+  { href: "/search", labelKey: "search", key: "search" },
 ] as const;
 
 type SiteNavKey = (typeof NAV_ITEMS)[number]["key"];
@@ -24,13 +27,31 @@ function getItemClassName(isActive: boolean) {
 }
 
 export function SiteNav({ current }: SiteNavProps) {
+  const t = useTranslations("Nav");
+
   return (
     <nav className="mb-6 flex flex-wrap items-center gap-2 text-sm font-medium text-neutral-600 dark:text-neutral-300">
-      {NAV_ITEMS.map((item) => (
-        <Link key={item.href} href={item.href} className={getItemClassName(current === item.key)}>
-          {item.label}
-        </Link>
-      ))}
+      <div className="flex flex-wrap items-center gap-2">
+        {NAV_ITEMS.map((item) => (
+          <Link key={item.href} href={item.href} className={getItemClassName(current === item.key)}>
+            {t(item.labelKey)}
+          </Link>
+        ))}
+      </div>
+      <Suspense fallback={<LanguageSwitcherFallback zhLabel={t("zh")} enLabel={t("en")} />}>
+        <LanguageSwitcher />
+      </Suspense>
     </nav>
+  );
+}
+
+function LanguageSwitcherFallback({ zhLabel, enLabel }: { zhLabel: string; enLabel: string }) {
+  return (
+    <div className="ml-auto inline-flex rounded-full border border-black/10 bg-white p-0.5 text-xs font-semibold shadow-sm dark:border-white/10 dark:bg-neutral-950">
+      <span className="rounded-full bg-neutral-900 px-2.5 py-1 text-white dark:bg-white dark:text-neutral-950">
+        {zhLabel}
+      </span>
+      <span className="rounded-full px-2.5 py-1 text-neutral-500">{enLabel}</span>
+    </div>
   );
 }

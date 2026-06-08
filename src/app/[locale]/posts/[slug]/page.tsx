@@ -1,5 +1,6 @@
 import Image from "next/image";
-import Link from "next/link";
+import { getTranslations, setRequestLocale } from "next-intl/server";
+import { Link } from "@/i18n/navigation";
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { compileMDX } from "next-mdx-remote/rsc";
@@ -13,33 +14,32 @@ import { createPageMetadata } from "@/lib/metadata";
 import { getPairedCyclingEntryForPostSlug } from "@/lib/content-pairings";
 import { StoryRideSwitch } from "@/components/story-ride-switch";
 import { PostCard } from "@/components/post-card";
+import { SiteNav } from "@/components/site-nav";
+import { routing } from "@/i18n/routing";
+import { resolveLocale } from "@/i18n/locale";
 
 type Params = {
-  params: Promise<{ slug: string }>;
+  params: Promise<{ locale: string; slug: string }>;
 };
 
 export const dynamicParams = false;
 
 export function generateStaticParams() {
-  return getAllPosts().map((post) => ({ slug: post.slug }));
+  return routing.locales.flatMap((locale) => getAllPosts().map((post) => ({ locale, slug: post.slug })));
 }
 
-const RELATED_POST_LABELS: Record<RelatedPost["relation"], string> = {
-  "same-category": "同分类",
-  "same-region": "同地区",
-  "shared-tags": "相同标签",
-  recent: "最近更新",
-};
-
 export async function generateMetadata({ params }: Params): Promise<Metadata> {
+  const locale = await resolveLocale(params);
   const { slug } = await params;
+  const t = await getTranslations({ locale, namespace: "PostDetail" });
   const post = getPostBySlug(slug);
 
   if (!post) {
     return createPageMetadata({
-      title: "Post Not Found",
-      description: "The requested trip story could not be found.",
+      title: t("notFoundTitle"),
+      description: t("notFoundDescription"),
       pathname: `/posts/${slug}`,
+      locale,
     });
   }
 
@@ -47,6 +47,7 @@ export async function generateMetadata({ params }: Params): Promise<Metadata> {
     title: post.frontmatter.title,
     description: post.frontmatter.excerpt,
     pathname: `/posts/${slug}`,
+    locale,
     image: post.frontmatter.coverImage,
     keywords: post.frontmatter.tags,
     type: "article",
@@ -57,10 +58,20 @@ export async function generateMetadata({ params }: Params): Promise<Metadata> {
 }
 
 export default async function PostDetail({ params }: Params) {
+  const locale = await resolveLocale(params);
+  setRequestLocale(locale);
+  const t = await getTranslations({ locale, namespace: "PostDetail" });
   const { slug } = await params;
   const post = getPostBySlug(slug);
 
   if (!post) notFound();
+
+  const relatedPostLabels: Record<RelatedPost["relation"], string> = {
+    "same-category": t("sameCategory"),
+    "same-region": t("sameRegion"),
+    "shared-tags": t("sharedTags"),
+    recent: t("recent"),
+  };
 
   const adjacentPosts = getAdjacentPosts(slug);
   const relatedPosts = getRelatedPosts(slug);
@@ -87,10 +98,12 @@ export default async function PostDetail({ params }: Params) {
 
   return (
     <main className="mx-auto w-full max-w-6xl px-5 pb-20 pt-8 sm:px-8 lg:px-10">
+      <SiteNav current="trips" />
+
       <nav className="flex flex-wrap items-center gap-2 text-sm text-neutral-500">
-        <Link href="/" className="hover:text-neutral-900 dark:hover:text-white">Home</Link>
+        <Link href="/" className="hover:text-neutral-900 dark:hover:text-white">{t("home")}</Link>
         <span>/</span>
-        <Link href="/trips" className="hover:text-neutral-900 dark:hover:text-white">Trips</Link>
+        <Link href="/trips" className="hover:text-neutral-900 dark:hover:text-white">{t("trips")}</Link>
         <span>/</span>
         <span>{region}</span>
       </nav>
@@ -141,16 +154,16 @@ export default async function PostDetail({ params }: Params) {
 
           <section className="mb-8 grid gap-4 rounded-2xl border border-black/10 bg-white p-5 text-sm dark:border-white/10 dark:bg-neutral-950 sm:grid-cols-3">
             <div>
-              <p className="text-xs uppercase tracking-[0.18em] text-neutral-500">Region</p>
+              <p className="text-xs uppercase tracking-[0.18em] text-neutral-500">{t("region")}</p>
               <p className="mt-2 font-medium">{region}</p>
             </div>
             <div>
-              <p className="text-xs uppercase tracking-[0.18em] text-neutral-500">Reading Time</p>
+              <p className="text-xs uppercase tracking-[0.18em] text-neutral-500">{t("readingTime")}</p>
               <p className="mt-2 font-medium">{post.frontmatter.readTime}</p>
             </div>
             <div>
-              <p className="text-xs uppercase tracking-[0.18em] text-neutral-500">Map Stops</p>
-              <p className="mt-2 font-medium">{post.locations.length} 个点位</p>
+              <p className="text-xs uppercase tracking-[0.18em] text-neutral-500">{t("mapStops")}</p>
+              <p className="mt-2 font-medium">{t("mapStopsCount", { count: post.locations.length })}</p>
             </div>
           </section>
 
@@ -164,18 +177,18 @@ export default async function PostDetail({ params }: Params) {
             <section className="mt-12 border-t border-black/10 pt-8 dark:border-white/10">
               <div className="mb-5 flex flex-wrap items-end justify-between gap-3">
                 <div>
-                  <p className="text-xs uppercase tracking-[0.18em] text-neutral-500">Related Stories</p>
-                  <h2 className="mt-1 text-2xl font-semibold tracking-tight">相关文章推荐</h2>
+                  <p className="text-xs uppercase tracking-[0.18em] text-neutral-500">{t("relatedEyebrow")}</p>
+                  <h2 className="mt-1 text-2xl font-semibold tracking-tight">{t("relatedTitle")}</h2>
                 </div>
                 <p className="max-w-md text-sm leading-6 text-neutral-500">
-                  优先推荐同分类内容，再用同地区和相同标签补足。
+                  {t("relatedDescription")}
                 </p>
               </div>
               <div className="grid gap-5 sm:grid-cols-2 xl:grid-cols-3">
                 {relatedPosts.map((relatedPost) => (
                   <div key={relatedPost.slug} className="space-y-2">
                     <span className="inline-flex rounded-full border border-black/10 px-3 py-1 text-xs text-neutral-500 dark:border-white/15">
-                      {RELATED_POST_LABELS[relatedPost.relation]}
+                      {relatedPostLabels[relatedPost.relation]}
                     </span>
                     <PostCard post={relatedPost} />
                   </div>
@@ -188,11 +201,11 @@ export default async function PostDetail({ params }: Params) {
             <section className="mt-12 border-t border-black/10 pt-8 dark:border-white/10">
               <div className="mb-4 flex items-end justify-between gap-3">
                 <div>
-                  <p className="text-xs uppercase tracking-[0.18em] text-neutral-500">Continue Reading</p>
-                  <h2 className="mt-1 text-2xl font-semibold tracking-tight">上一篇 / 下一篇</h2>
+                  <p className="text-xs uppercase tracking-[0.18em] text-neutral-500">{t("continueEyebrow")}</p>
+                  <h2 className="mt-1 text-2xl font-semibold tracking-tight">{t("continueTitle")}</h2>
                 </div>
                 <Link href="/trips" className="text-sm text-neutral-500 hover:text-neutral-900 dark:hover:text-white">
-                  查看全部游记
+                  {t("allTrips")}
                 </Link>
               </div>
               <div className="grid gap-4 md:grid-cols-2">
@@ -201,7 +214,7 @@ export default async function PostDetail({ params }: Params) {
                     href={`/posts/${adjacentPosts.previous.slug}`}
                     className="rounded-2xl border border-black/10 bg-white p-5 transition hover:-translate-y-0.5 hover:shadow-sm dark:border-white/10 dark:bg-neutral-950"
                   >
-                    <p className="text-xs uppercase tracking-[0.18em] text-neutral-500">上一篇</p>
+                    <p className="text-xs uppercase tracking-[0.18em] text-neutral-500">{t("previous")}</p>
                     <h3 className="mt-2 text-lg font-semibold">{adjacentPosts.previous.title}</h3>
                     <p className="mt-2 text-sm leading-6 text-neutral-600 dark:text-neutral-300">
                       {adjacentPosts.previous.excerpt}
@@ -212,7 +225,7 @@ export default async function PostDetail({ params }: Params) {
                   </Link>
                 ) : (
                   <div className="rounded-2xl border border-dashed border-black/10 p-5 text-sm text-neutral-500 dark:border-white/10">
-                    已经是第一篇了。
+                    {t("firstPost")}
                   </div>
                 )}
 
@@ -221,7 +234,7 @@ export default async function PostDetail({ params }: Params) {
                     href={`/posts/${adjacentPosts.next.slug}`}
                     className="rounded-2xl border border-black/10 bg-white p-5 transition hover:-translate-y-0.5 hover:shadow-sm dark:border-white/10 dark:bg-neutral-950"
                   >
-                    <p className="text-xs uppercase tracking-[0.18em] text-neutral-500">下一篇</p>
+                    <p className="text-xs uppercase tracking-[0.18em] text-neutral-500">{t("next")}</p>
                     <h3 className="mt-2 text-lg font-semibold">{adjacentPosts.next.title}</h3>
                     <p className="mt-2 text-sm leading-6 text-neutral-600 dark:text-neutral-300">
                       {adjacentPosts.next.excerpt}
@@ -232,7 +245,7 @@ export default async function PostDetail({ params }: Params) {
                   </Link>
                 ) : (
                   <div className="rounded-2xl border border-dashed border-black/10 p-5 text-sm text-neutral-500 dark:border-white/10">
-                    已经是最后一篇了。
+                    {t("lastPost")}
                   </div>
                 )}
               </div>
@@ -243,18 +256,18 @@ export default async function PostDetail({ params }: Params) {
         <aside className="hidden lg:block">
           <div className="sticky top-8 space-y-4">
             <div className="rounded-2xl border border-black/10 bg-white p-4 dark:border-white/10 dark:bg-neutral-950">
-              <p className="text-xs font-semibold uppercase tracking-widest text-neutral-500">Trip Snapshot</p>
+              <p className="text-xs font-semibold uppercase tracking-widest text-neutral-500">{t("snapshot")}</p>
               <dl className="mt-3 space-y-3 text-sm">
                 <div>
-                  <dt className="text-neutral-500">Category</dt>
+                  <dt className="text-neutral-500">{t("category")}</dt>
                   <dd className="mt-1 text-neutral-900 dark:text-white">{post.frontmatter.category}</dd>
                 </div>
                 <div>
-                  <dt className="text-neutral-500">Published</dt>
+                  <dt className="text-neutral-500">{t("published")}</dt>
                   <dd className="mt-1 text-neutral-900 dark:text-white">{post.frontmatter.date}</dd>
                 </div>
                 <div>
-                  <dt className="text-neutral-500">Stops</dt>
+                  <dt className="text-neutral-500">{t("stops")}</dt>
                   <dd className="mt-1 text-neutral-900 dark:text-white">{post.locations.length}</dd>
                 </div>
               </dl>
@@ -262,7 +275,7 @@ export default async function PostDetail({ params }: Params) {
 
             {post.headings.length > 0 ? (
               <div className="rounded-2xl border border-black/10 bg-white p-4 dark:border-white/10 dark:bg-neutral-950">
-                <p className="text-xs font-semibold uppercase tracking-widest text-neutral-500">目录</p>
+                <p className="text-xs font-semibold uppercase tracking-widest text-neutral-500">{t("contents")}</p>
                 <ul className="mt-3 space-y-2 text-sm">
                   {post.headings.map((h) => (
                     <li key={h.id} className={h.level === 3 ? "ml-3" : ""}>

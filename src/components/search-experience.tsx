@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState, type FormEvent } from "react";
 import Fuse, { type IFuseOptions } from "fuse.js";
+import { useLocale, useTranslations } from "next-intl";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { PostCard } from "@/components/post-card";
 import type { SearchIndexEntry } from "@/types/search";
@@ -42,13 +43,13 @@ function getQuickSuggestions(posts: SearchIndexEntry[]) {
   return [...regions.slice(0, 4), ...tags.slice(0, 4)].slice(0, 6);
 }
 
-function formatGeneratedAt(value: string) {
+function formatGeneratedAt(value: string, locale: string) {
   if (!value) return null;
 
   const date = new Date(value);
   if (Number.isNaN(date.getTime())) return null;
 
-  return date.toLocaleDateString("en-US", {
+  return date.toLocaleDateString(locale, {
     month: "short",
     day: "numeric",
     year: "numeric",
@@ -56,6 +57,8 @@ function formatGeneratedAt(value: string) {
 }
 
 export function SearchExperience() {
+  const locale = useLocale();
+  const t = useTranslations("Search");
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
@@ -134,7 +137,7 @@ export function SearchExperience() {
       .map((result) => result.item);
   }, [fuse, normalizedQuery, posts]);
 
-  const generatedAt = formatGeneratedAt(data?.generatedAt ?? "");
+  const generatedAt = formatGeneratedAt(data?.generatedAt ?? "", locale);
 
   function syncUrl(nextQuery: string) {
     const trimmedQuery = nextQuery.trim();
@@ -165,34 +168,33 @@ export function SearchExperience() {
       <div className="rounded-[2rem] border border-black/10 bg-white p-6 shadow-sm dark:border-white/10 dark:bg-neutral-950 sm:p-8">
         <div className="flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
           <div className="max-w-2xl">
-            <p className="text-xs uppercase tracking-[0.2em] text-neutral-500">Search</p>
+            <p className="text-xs uppercase tracking-[0.2em] text-neutral-500">{t("eyebrow")}</p>
             <h1 className="mt-2 text-3xl font-semibold tracking-tight sm:text-4xl">
-              找到你下一篇想读的路线
+              {t("title")}
             </h1>
             <p className="mt-3 text-sm leading-7 text-neutral-600 dark:text-neutral-300 sm:text-base">
-              可以搜目的地、州名、路线主题、骑行数据、景点名，或者正文里的关键词。比如 `Yellowstone`
-              、`Carmel`、`Lake Tahoe`、`74.5 mi`。
+              {t("intro")}
             </p>
           </div>
 
           <div className="rounded-2xl border border-black/10 bg-neutral-50 px-4 py-3 text-sm text-neutral-600 dark:border-white/10 dark:bg-neutral-900 dark:text-neutral-300">
-            <p className="font-medium text-neutral-900 dark:text-white">{posts.length} stories and rides indexed</p>
+            <p className="font-medium text-neutral-900 dark:text-white">{t("indexed", { count: posts.length })}</p>
             <p className="mt-1 text-xs uppercase tracking-[0.18em] text-neutral-500">
-              {generatedAt ? `Updated ${generatedAt}` : "Search index ready"}
+              {generatedAt ? t("updated", { date: generatedAt }) : t("ready")}
             </p>
           </div>
         </div>
 
         <form onSubmit={handleSubmit} className="mt-6 flex flex-col gap-3 lg:flex-row">
           <label className="sr-only" htmlFor="site-search">
-            Search stories and rides
+            {t("inputLabel")}
           </label>
           <input
             id="site-search"
             type="search"
             value={query}
             onChange={(event) => setQuery(event.target.value)}
-            placeholder="Search by destination, keyword, or story detail"
+            placeholder={t("placeholder")}
             className="min-h-12 flex-1 rounded-2xl border border-black/10 bg-neutral-50 px-4 text-sm text-neutral-900 outline-none transition focus:border-neutral-900 focus:bg-white dark:border-white/10 dark:bg-neutral-900 dark:text-white dark:focus:border-white dark:focus:bg-neutral-950"
           />
           <div className="flex gap-3">
@@ -200,14 +202,14 @@ export function SearchExperience() {
               type="submit"
               className="min-h-12 rounded-2xl bg-neutral-900 px-5 text-sm font-semibold !text-white transition hover:bg-neutral-800 dark:bg-white dark:!text-neutral-950 dark:hover:bg-neutral-100"
             >
-              Search
+              {t("submit")}
             </button>
             <button
               type="button"
               onClick={handleClear}
               className="min-h-12 rounded-2xl border border-black/10 px-5 text-sm font-medium text-neutral-700 transition hover:bg-neutral-100 dark:border-white/10 dark:text-neutral-200 dark:hover:bg-neutral-900"
             >
-              Clear
+              {t("clear")}
             </button>
           </div>
         </form>
@@ -234,16 +236,18 @@ export function SearchExperience() {
       <div className="mt-8 flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
         <div>
           <p className="text-xs uppercase tracking-[0.18em] text-neutral-500">
-            {normalizedQuery ? "Search Results" : "Browse Suggestions"}
+            {normalizedQuery ? t("resultsLabel") : t("suggestionsLabel")}
           </p>
           <h2 className="mt-1 text-2xl font-semibold tracking-tight">
-            {normalizedQuery ? `“${normalizedQuery}”` : "Recent stories and rides from the index"}
+            {normalizedQuery ? `“${normalizedQuery}”` : t("recentTitle")}
           </h2>
         </div>
         <p className="text-sm text-neutral-500">
           {normalizedQuery
-            ? `${results.length} result${results.length === 1 ? "" : "s"}`
-            : `Showing ${Math.min(posts.length, DEFAULT_RESULTS_LIMIT)} recent entries`}
+            ? results.length === 1
+              ? t("singleResult")
+              : t("resultCount", { count: results.length })
+            : t("showingRecent", { count: Math.min(posts.length, DEFAULT_RESULTS_LIMIT) })}
         </p>
       </div>
 
@@ -266,11 +270,11 @@ export function SearchExperience() {
         </div>
       ) : error ? (
         <div className="mt-5 rounded-2xl border border-red-200 bg-red-50 px-5 py-6 text-sm text-red-700 dark:border-red-900/40 dark:bg-red-950/30 dark:text-red-200">
-          Search index failed to load: {error}
+          {t("failed", { error })}
         </div>
       ) : results.length === 0 ? (
         <div className="mt-5 rounded-2xl border border-dashed border-black/10 px-5 py-8 text-sm text-neutral-600 dark:border-white/10 dark:text-neutral-300">
-          没有找到匹配结果。试试换一个地名、活动名称、路线数据，或者直接搜景点名。
+          {t("empty")}
         </div>
       ) : (
         <div className="mt-5 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">

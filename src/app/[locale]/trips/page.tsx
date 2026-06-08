@@ -1,18 +1,33 @@
 import type { Metadata } from "next";
-import Link from "next/link";
+import { getTranslations, setRequestLocale } from "next-intl/server";
+import { Link } from "@/i18n/navigation";
 import { getAllPosts } from "@/lib/posts";
 import { PostCard } from "@/components/post-card";
 import { SiteNav } from "@/components/site-nav";
 import { createPageMetadata } from "@/lib/metadata";
+import { resolveLocale, type LocaleParams } from "@/i18n/locale";
 
-export const metadata: Metadata = createPageMetadata({
-  title: "All Trips",
-  description: "Browse every TJ Adventure trip post by region, with dates, summaries, and quick route context.",
-  pathname: "/trips",
-  keywords: ["all trips", "trip archive", "travel destinations", "travel posts"],
-});
+type PageProps = {
+  params: LocaleParams;
+};
 
-export default function TripsPage() {
+export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
+  const locale = await resolveLocale(params);
+  const t = await getTranslations({ locale, namespace: "Trips" });
+
+  return createPageMetadata({
+    title: t("metadataTitle"),
+    description: t("metadataDescription"),
+    pathname: "/trips",
+    locale,
+    keywords: ["all trips", "trip archive", "travel destinations", "travel posts"],
+  });
+}
+
+export default async function TripsPage({ params }: PageProps) {
+  const locale = await resolveLocale(params);
+  setRequestLocale(locale);
+  const t = await getTranslations({ locale, namespace: "Trips" });
   const allPosts = getAllPosts();
   const groupedPosts = Array.from(
     allPosts.reduce((map, post) => {
@@ -29,16 +44,16 @@ export default function TripsPage() {
       <SiteNav current="trips" />
 
       <header className="mb-8 rounded-3xl border border-black/10 bg-white p-7 dark:border-white/10 dark:bg-neutral-950">
-        <h1 className="text-3xl font-semibold tracking-tight">All Trips</h1>
+        <h1 className="text-3xl font-semibold tracking-tight">{t("title")}</h1>
         <p className="mt-3 text-base leading-8 text-neutral-700 dark:text-neutral-300">
-          所有游记按地区分组展示，每个分组内部按日期从新到旧排序，方便先选目的地，再进单篇路线。
+          {t("intro")}
         </p>
         <div className="mt-5">
           <Link
             href="/search"
             className="inline-flex rounded-full border border-neutral-900 bg-neutral-900 px-4 py-2 text-sm font-semibold !text-white shadow-sm shadow-black/10 transition hover:bg-neutral-800 dark:border-white/20 dark:bg-white dark:!text-neutral-950 dark:hover:bg-neutral-100"
           >
-            搜索目的地和关键词
+            {t("searchCta")}
           </Link>
         </div>
 
@@ -56,17 +71,17 @@ export default function TripsPage() {
       </header>
 
       {allPosts.length === 0 ? (
-        <p className="text-sm text-neutral-600 dark:text-neutral-300">No posts yet.</p>
+        <p className="text-sm text-neutral-600 dark:text-neutral-300">{t("empty")}</p>
       ) : (
         <div className="space-y-10">
           {groupedPosts.map(([region, posts]) => (
             <section key={region} id={`region-${region.toLowerCase().replace(/\s+/g, "-")}`}>
               <div className="mb-5 flex items-end justify-between gap-3">
                 <div>
-                  <p className="text-xs uppercase tracking-[0.18em] text-neutral-500">Region</p>
+                  <p className="text-xs uppercase tracking-[0.18em] text-neutral-500">{t("region")}</p>
                   <h2 className="mt-1 text-2xl font-semibold tracking-tight">{region}</h2>
                 </div>
-                <p className="text-sm text-neutral-500">{posts.length} 篇</p>
+                <p className="text-sm text-neutral-500">{t("count", { count: posts.length })}</p>
               </div>
               <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
                 {posts.map((post) => (

@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { getLocalizedPathname, type Locale } from "@/i18n/routing";
 
 export const SITE_NAME = "TJ Adventure";
 export const DEFAULT_DESCRIPTION =
@@ -6,10 +7,21 @@ export const DEFAULT_DESCRIPTION =
 export const DEFAULT_OG_IMAGE = "/branding/TJ_Adventure_patagonia_banner.jpg";
 const DEFAULT_SITE_URL = "http://localhost:3000";
 
+const DEFAULT_DESCRIPTIONS: Record<Locale, string> = {
+  "zh-CN": "家庭旅行故事、路线笔记和可以真正复用的实用攻略。",
+  "en-US": DEFAULT_DESCRIPTION,
+};
+
+const OG_LOCALES: Record<Locale, string> = {
+  "zh-CN": "zh_CN",
+  "en-US": "en_US",
+};
+
 type PageMetadataInput = {
   title: string;
   description: string;
   pathname: string;
+  locale?: Locale;
   image?: string;
   keywords?: string[];
   type?: "website" | "article";
@@ -49,6 +61,7 @@ export function createPageMetadata({
   title,
   description,
   pathname,
+  locale = "zh-CN",
   image = DEFAULT_OG_IMAGE,
   keywords,
   type = "website",
@@ -56,20 +69,27 @@ export function createPageMetadata({
   section,
   tags,
 }: PageMetadataInput): Metadata {
+  const canonical = getLocalizedPathname(pathname, locale);
+
   return {
     title,
     description,
     alternates: {
-      canonical: pathname,
+      canonical,
+      languages: {
+        "zh-CN": getLocalizedPathname(pathname, "zh-CN"),
+        "en-US": getLocalizedPathname(pathname, "en-US"),
+        "x-default": getLocalizedPathname(pathname, "zh-CN"),
+      },
     },
     keywords,
     openGraph: {
       title,
       description,
-      url: pathname,
+      url: canonical,
       siteName: SITE_NAME,
       images: [{ url: image }],
-      locale: "zh_CN",
+      locale: OG_LOCALES[locale],
       type,
       ...(publishedTime ? { publishedTime } : {}),
       ...(section ? { section } : {}),
@@ -84,7 +104,9 @@ export function createPageMetadata({
   };
 }
 
-export function getSiteMetadataDefaults(): Metadata {
+export function getSiteMetadataDefaults(locale: Locale = "zh-CN"): Metadata {
+  const description = DEFAULT_DESCRIPTIONS[locale];
+
   return {
     metadataBase: getMetadataBase(),
     applicationName: SITE_NAME,
@@ -92,7 +114,15 @@ export function getSiteMetadataDefaults(): Metadata {
       default: SITE_NAME,
       template: `%s | ${SITE_NAME}`,
     },
-    description: DEFAULT_DESCRIPTION,
+    description,
+    alternates: {
+      canonical: getLocalizedPathname("/", locale),
+      languages: {
+        "zh-CN": getLocalizedPathname("/", "zh-CN"),
+        "en-US": getLocalizedPathname("/", "en-US"),
+        "x-default": getLocalizedPathname("/", "zh-CN"),
+      },
+    },
     keywords: [
       "travel blog",
       "family travel",
@@ -105,9 +135,9 @@ export function getSiteMetadataDefaults(): Metadata {
     publisher: SITE_NAME,
     openGraph: {
       title: SITE_NAME,
-      description: DEFAULT_DESCRIPTION,
+      description,
       siteName: SITE_NAME,
-      locale: "zh_CN",
+      locale: OG_LOCALES[locale],
       type: "website",
       images: [{ url: DEFAULT_OG_IMAGE }],
     },

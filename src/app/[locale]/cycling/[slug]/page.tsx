@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Image from "next/image";
-import Link from "next/link";
+import { getTranslations, setRequestLocale } from "next-intl/server";
+import { Link } from "@/i18n/navigation";
 import { notFound } from "next/navigation";
 import { compileMDX } from "next-mdx-remote/rsc";
 import remarkGfm from "remark-gfm";
@@ -15,15 +16,11 @@ import type { TripLocation } from "@/types/posts";
 import { getPairedPostForCyclingSlug } from "@/lib/content-pairings";
 import { StoryRideSwitch } from "@/components/story-ride-switch";
 import { TripMap } from "@/components/trip-map";
+import { routing } from "@/i18n/routing";
+import { resolveLocale } from "@/i18n/locale";
 
 type Params = {
-  params: Promise<{ slug: string }>;
-};
-
-const RIDE_TYPE_LABELS: Record<CyclingEntry["rideType"], string> = {
-  road: "Road",
-  event: "Event",
-  gravel: "Gravel",
+  params: Promise<{ locale: string; slug: string }>;
 };
 
 const dateFormatter = new Intl.DateTimeFormat("en-US", {
@@ -36,30 +33,40 @@ const dateFormatter = new Intl.DateTimeFormat("en-US", {
 export const dynamicParams = false;
 
 export function generateStaticParams() {
-  return getAllCyclingEntries().map((entry) => ({ slug: entry.slug }));
+  return routing.locales.flatMap((locale) => getAllCyclingEntries().map((entry) => ({ locale, slug: entry.slug })));
 }
 
 export async function generateMetadata({ params }: Params): Promise<Metadata> {
+  const locale = await resolveLocale(params);
   const { slug } = await params;
+  const t = await getTranslations({ locale, namespace: "CyclingDetail" });
   const entry = getCyclingEntryBySlug(slug);
 
   if (!entry) {
     return createPageMetadata({
-      title: "Ride Not Found",
-      description: "The requested cycling ride could not be found.",
+      title: t("notFoundTitle"),
+      description: t("notFoundDescription"),
       pathname: `/cycling/${slug}`,
+      locale,
     });
   }
+
+  const rideTypeLabels: Record<CyclingEntry["rideType"], string> = {
+    road: t("road"),
+    event: t("event"),
+    gravel: t("gravel"),
+  };
 
   return createPageMetadata({
     title: entry.title,
     description: entry.excerpt,
     pathname: `/cycling/${slug}`,
+    locale,
     image: entry.coverImage,
     keywords: entry.tags,
     type: "article",
     publishedTime: entry.rideDate,
-    section: `Cycling · ${RIDE_TYPE_LABELS[entry.rideType]}`,
+    section: `Cycling · ${rideTypeLabels[entry.rideType]}`,
     tags: entry.tags,
   });
 }
@@ -79,16 +86,18 @@ function formatSurface(surface: string) {
     .join(" ");
 }
 
-function getRouteSummary(entry: CyclingEntry) {
+type Translator = Awaited<ReturnType<typeof getTranslations>>;
+
+function getRouteSummary(entry: CyclingEntry, t: Translator) {
   const route = entry.route;
   if (!route) return [];
 
   return [
-    route.name ? { label: "Route", value: route.name } : null,
-    route.start ? { label: "Start", value: route.start } : null,
-    route.finish ? { label: "Finish", value: route.finish } : null,
-    route.surface ? { label: "Surface", value: route.surface.map(formatSurface).join(" / ") } : null,
-    route.track ? { label: "Track", value: route.track.title ?? "GeoJSON route overlay" } : null,
+    route.name ? { label: t("route"), value: route.name } : null,
+    route.start ? { label: t("start"), value: route.start } : null,
+    route.finish ? { label: t("finish"), value: route.finish } : null,
+    route.surface ? { label: t("surface"), value: route.surface.map(formatSurface).join(" / ") } : null,
+    route.track ? { label: t("track"), value: route.track.title ?? t("geojson") } : null,
   ].filter((item): item is { label: string; value: string } => Boolean(item));
 }
 
@@ -108,13 +117,24 @@ function getMapLocations(entry: CyclingEntry): TripLocation[] {
   ];
 }
 
-function SourceBlock({ entry }: { entry: CyclingEntry }) {
+function SourceBlock({
+  entry,
+  copy,
+}: {
+  entry: CyclingEntry;
+  copy: {
+    source: string;
+    title: string;
+    description: string;
+    open: string;
+  };
+}) {
   return (
     <section className="rounded-2xl border border-black/10 bg-white p-5 dark:border-white/10 dark:bg-neutral-950">
-      <p className="text-xs uppercase tracking-[0.18em] text-neutral-500">Source</p>
-      <h2 className="mt-2 text-xl font-semibold tracking-tight">Strava activity</h2>
+      <p className="text-xs uppercase tracking-[0.18em] text-neutral-500">{copy.source}</p>
+      <h2 className="mt-2 text-xl font-semibold tracking-tight">{copy.title}</h2>
       <p className="mt-2 text-sm leading-6 text-neutral-600 dark:text-neutral-300">
-        Use the original activity for source stats, route trace, and later sync work.
+        {copy.description}
       </p>
       <a
         href={entry.stravaUrl}
@@ -122,7 +142,7 @@ function SourceBlock({ entry }: { entry: CyclingEntry }) {
         rel="noreferrer"
         className="mt-4 inline-flex rounded-full border border-neutral-900 bg-neutral-900 px-4 py-2 text-sm font-semibold !text-white shadow-sm shadow-black/10 transition hover:bg-neutral-800 dark:border-white/20 dark:bg-white dark:!text-neutral-950 dark:hover:bg-neutral-100"
       >
-        Open on Strava
+        {copy.open}
       </a>
     </section>
   );
@@ -147,19 +167,27 @@ function DetailList({ title, items }: { title: string; items: string[] | undefin
 }
 
 export default async function CyclingDetailPage({ params }: Params) {
+  const locale = await resolveLocale(params);
+  setRequestLocale(locale);
+  const t = await getTranslations({ locale, namespace: "CyclingDetail" });
   const { slug } = await params;
   const entry = getCyclingEntryBySlug(slug);
 
   if (!entry) notFound();
 
+  const rideTypeLabels: Record<CyclingEntry["rideType"], string> = {
+    road: t("road"),
+    event: t("event"),
+    gravel: t("gravel"),
+  };
   const pairedPost = getPairedPostForCyclingSlug(slug);
-  const routeSummary = getRouteSummary(entry);
+  const routeSummary = getRouteSummary(entry, t);
   const mapLocations = getMapLocations(entry);
   const stats = [
-    { label: "Distance", value: formatMeasurement(entry.distance) },
-    { label: "Elevation", value: formatMeasurement(entry.elevationGain) },
-    { label: "Moving Time", value: entry.movingTime },
-    { label: "Ride Date", value: formatDate(entry.rideDate) },
+    { label: t("distance"), value: formatMeasurement(entry.distance) },
+    { label: t("elevation"), value: formatMeasurement(entry.elevationGain) },
+    { label: t("movingTime"), value: entry.movingTime },
+    { label: t("rideDate"), value: formatDate(entry.rideDate) },
   ];
 
   const { content } = await compileMDX({
@@ -179,14 +207,14 @@ export default async function CyclingDetailPage({ params }: Params) {
 
       <nav className="mb-5 flex flex-wrap items-center gap-2 text-sm text-neutral-500">
         <Link href="/" className="hover:text-neutral-900 dark:hover:text-white">
-          Home
+          {t("home")}
         </Link>
         <span>/</span>
         <Link href="/cycling" className="hover:text-neutral-900 dark:hover:text-white">
-          Cycling
+          {t("cycling")}
         </Link>
         <span>/</span>
-        <span>{RIDE_TYPE_LABELS[entry.rideType]}</span>
+        <span>{rideTypeLabels[entry.rideType]}</span>
       </nav>
 
       <article className="grid gap-8 lg:grid-cols-[1fr_320px]">
@@ -202,7 +230,7 @@ export default async function CyclingDetailPage({ params }: Params) {
                 priority
               />
               <div className="absolute left-5 top-5 rounded-full border border-white/40 bg-black/60 px-3 py-1 text-xs font-semibold uppercase tracking-wider text-white backdrop-blur">
-                {RIDE_TYPE_LABELS[entry.rideType]}
+                {rideTypeLabels[entry.rideType]}
               </div>
             </div>
             <div className="p-6 sm:p-8">
@@ -245,7 +273,7 @@ export default async function CyclingDetailPage({ params }: Params) {
           <section className="mt-6 rounded-2xl border border-black/10 bg-white p-5 dark:border-white/10 dark:bg-neutral-950">
             <div className="flex flex-wrap items-start justify-between gap-4">
               <div>
-                <p className="text-xs uppercase tracking-[0.18em] text-neutral-500">Location</p>
+                <p className="text-xs uppercase tracking-[0.18em] text-neutral-500">{t("location")}</p>
                 <h2 className="mt-2 text-2xl font-semibold tracking-tight">{entry.location.name}</h2>
                 <p className="mt-2 text-sm leading-6 text-neutral-600 dark:text-neutral-300">
                   {entry.location.note ?? entry.location.region}
@@ -253,7 +281,7 @@ export default async function CyclingDetailPage({ params }: Params) {
               </div>
               {entry.location.lat != null && entry.location.lng != null ? (
                 <div className="rounded-xl border border-black/10 px-4 py-3 text-sm dark:border-white/10">
-                  <p className="text-neutral-500">Coordinates</p>
+                  <p className="text-neutral-500">{t("coordinates")}</p>
                   <p className="mt-1 font-medium">
                     {entry.location.lat}, {entry.location.lng}
                   </p>
@@ -264,7 +292,7 @@ export default async function CyclingDetailPage({ params }: Params) {
 
           {routeSummary.length > 0 ? (
             <section className="mt-6 rounded-2xl border border-black/10 bg-white p-5 dark:border-white/10 dark:bg-neutral-950">
-              <p className="text-xs uppercase tracking-[0.18em] text-neutral-500">Route Overview</p>
+              <p className="text-xs uppercase tracking-[0.18em] text-neutral-500">{t("routeOverview")}</p>
               <div className="mt-4 grid gap-3 sm:grid-cols-2">
                 {routeSummary.map((item) => (
                   <div key={item.label} className="rounded-xl border border-black/10 px-4 py-3 dark:border-white/10">
@@ -279,7 +307,7 @@ export default async function CyclingDetailPage({ params }: Params) {
           {mapLocations.length > 0 || entry.route?.track ? (
             <div className="mt-6">
               <TripMap
-                title={`${entry.location.name} route`}
+                title={t("routeTitle", { name: entry.location.name })}
                 locations={mapLocations}
                 fallbackImage={entry.coverImage}
                 track={entry.route?.track}
@@ -288,8 +316,8 @@ export default async function CyclingDetailPage({ params }: Params) {
           ) : null}
 
           <div className="mt-6 grid gap-5 lg:grid-cols-2">
-            <DetailList title="Logistics" items={entry.logistics} />
-            <DetailList title="Notes" items={entry.notes} />
+            <DetailList title={t("logistics")} items={entry.logistics} />
+            <DetailList title={t("notes")} items={entry.notes} />
           </div>
 
           <div className="mdx-content mt-8 max-w-none">{content}</div>
@@ -297,8 +325,8 @@ export default async function CyclingDetailPage({ params }: Params) {
           {entry.images && entry.images.length > 0 ? (
             <section className="mt-10 border-t border-black/10 pt-8 dark:border-white/10">
               <div className="mb-5">
-                <p className="text-xs uppercase tracking-[0.18em] text-neutral-500">Photos</p>
-                <h2 className="mt-1 text-2xl font-semibold tracking-tight">Ride Gallery</h2>
+                <p className="text-xs uppercase tracking-[0.18em] text-neutral-500">{t("photos")}</p>
+                <h2 className="mt-1 text-2xl font-semibold tracking-tight">{t("gallery")}</h2>
               </div>
               <div className="grid gap-5 sm:grid-cols-2">
                 {entry.images.map((image) => (
@@ -329,24 +357,32 @@ export default async function CyclingDetailPage({ params }: Params) {
 
         <aside className="lg:sticky lg:top-8 lg:self-start">
           <div className="space-y-4">
-            <SourceBlock entry={entry} />
+            <SourceBlock
+              entry={entry}
+              copy={{
+                source: t("source"),
+                title: t("stravaTitle"),
+                description: t("stravaDescription"),
+                open: t("openStrava"),
+              }}
+            />
             <section className="rounded-2xl border border-black/10 bg-white p-5 dark:border-white/10 dark:bg-neutral-950">
-              <p className="text-xs uppercase tracking-[0.18em] text-neutral-500">Ride Snapshot</p>
+              <p className="text-xs uppercase tracking-[0.18em] text-neutral-500">{t("snapshot")}</p>
               <dl className="mt-4 space-y-4 text-sm">
                 <div>
-                  <dt className="text-neutral-500">Type</dt>
-                  <dd className="mt-1 font-medium text-neutral-900 dark:text-white">{RIDE_TYPE_LABELS[entry.rideType]}</dd>
+                  <dt className="text-neutral-500">{t("type")}</dt>
+                  <dd className="mt-1 font-medium text-neutral-900 dark:text-white">{rideTypeLabels[entry.rideType]}</dd>
                 </div>
                 <div>
-                  <dt className="text-neutral-500">Location</dt>
+                  <dt className="text-neutral-500">{t("location")}</dt>
                   <dd className="mt-1 font-medium text-neutral-900 dark:text-white">{entry.location.region}</dd>
                 </div>
                 <div>
-                  <dt className="text-neutral-500">Distance</dt>
+                  <dt className="text-neutral-500">{t("distance")}</dt>
                   <dd className="mt-1 font-medium text-neutral-900 dark:text-white">{formatMeasurement(entry.distance)}</dd>
                 </div>
                 <div>
-                  <dt className="text-neutral-500">Elevation</dt>
+                  <dt className="text-neutral-500">{t("elevation")}</dt>
                   <dd className="mt-1 font-medium text-neutral-900 dark:text-white">
                     {formatMeasurement(entry.elevationGain)}
                   </dd>
@@ -356,7 +392,7 @@ export default async function CyclingDetailPage({ params }: Params) {
 
             {entry.headings.length > 0 ? (
               <section className="hidden rounded-2xl border border-black/10 bg-white p-5 dark:border-white/10 dark:bg-neutral-950 lg:block">
-                <p className="text-xs uppercase tracking-[0.18em] text-neutral-500">Contents</p>
+                <p className="text-xs uppercase tracking-[0.18em] text-neutral-500">{t("contents")}</p>
                 <ul className="mt-3 space-y-2 text-sm">
                   {entry.headings.map((heading) => (
                     <li key={heading.id} className={heading.level === 3 ? "ml-3" : ""}>
