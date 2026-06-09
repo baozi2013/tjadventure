@@ -7,9 +7,12 @@ import remarkGfm from "remark-gfm";
 import { SiteNav } from "@/components/site-nav";
 import { mdxComponents } from "@/components/mdx-components";
 import { createPageMetadata } from "@/lib/metadata";
+import { getLocalizedContentPath } from "@/lib/content-locale";
 import { resolveLocale, type LocaleParams } from "@/i18n/locale";
+import type { Locale } from "@/i18n/routing";
 
 const GEARS_DIR = path.join(process.cwd(), "content/gears");
+const GEARS_EN_DIR = path.join(process.cwd(), "content/en/gears");
 
 type PageProps = {
   params: LocaleParams;
@@ -29,11 +32,11 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   });
 }
 
-async function renderGearMarkdown(fileName: string) {
-  const fullPath = path.join(GEARS_DIR, fileName);
+async function renderGearMarkdown(fileName: string, locale: Locale, missingTitle: string, missingDescription: string) {
+  const fullPath = getLocalizedContentPath(GEARS_DIR, GEARS_EN_DIR, fileName, locale);
   const source = fs.existsSync(fullPath)
     ? fs.readFileSync(fullPath, "utf8")
-    : "# 内容缺失\n\n暂未找到该装备清单文件。";
+    : `# ${missingTitle}\n\n${missingDescription}`;
 
   const { content } = await compileMDX({
     source,
@@ -52,8 +55,8 @@ export default async function GearsPage({ params }: PageProps) {
   const locale = await resolveLocale(params);
   setRequestLocale(locale);
   const t = await getTranslations({ locale, namespace: "Gears" });
-  const campingContent = await renderGearMarkdown("camping-gear.md");
-  const photoContent = await renderGearMarkdown("photo-gear.md");
+  const campingContent = await renderGearMarkdown("camping-gear.md", locale, t("missingTitle"), t("missingDescription"));
+  const photoContent = await renderGearMarkdown("photo-gear.md", locale, t("missingTitle"), t("missingDescription"));
 
   return (
     <main className="mx-auto min-h-screen w-full max-w-4xl px-5 pb-20 pt-10 sm:px-8 lg:px-10">

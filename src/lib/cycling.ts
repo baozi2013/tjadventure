@@ -1,6 +1,9 @@
 import fs from "node:fs";
 import path from "node:path";
 import matter from "gray-matter";
+import { cyclingEnglishTranslations } from "@/data/content-translations";
+import type { Locale } from "@/i18n/routing";
+import { DEFAULT_CONTENT_LOCALE, getLocalizedContentPath } from "@/lib/content-locale";
 import {
   CYCLING_DISTANCE_UNITS,
   CYCLING_ELEVATION_UNITS,
@@ -25,6 +28,7 @@ import { MAP_TRACK_FORMATS, type MapRouteTrack, type MapTrackFormat } from "@/ty
 import type { SearchIndexEntry } from "@/types/search";
 
 const CYCLING_DIR = path.join(process.cwd(), "content/cycling");
+const CYCLING_EN_DIR = path.join(process.cwd(), "content/en/cycling");
 const DATE_FORMAT = /^\d{4}-\d{2}-\d{2}$/;
 const MOVING_TIME_FORMAT = /^\d{1,3}:[0-5]\d:[0-5]\d$/;
 
@@ -437,16 +441,51 @@ function getCyclingFilenames() {
   return fs.readdirSync(CYCLING_DIR).filter((file) => file.endsWith(".mdx") && !file.startsWith("_"));
 }
 
-function readParsedCyclingEntry(fullPath: string, slug: string): CyclingEntry {
+function getCyclingPath(fileName: string, locale: Locale) {
+  return getLocalizedContentPath(CYCLING_DIR, CYCLING_EN_DIR, fileName, locale);
+}
+
+function readParsedCyclingEntry(fullPath: string, slug: string, locale: Locale): CyclingEntry {
   const raw = fs.readFileSync(fullPath, "utf8");
   const { data, content } = matter(raw);
   const frontmatter = parseCyclingFrontmatter(data, fullPath);
+  const translation = locale === "en-US" ? cyclingEnglishTranslations[slug] : undefined;
+  const localizedFrontmatter = translation
+    ? {
+        ...frontmatter,
+        title: translation.title,
+        excerpt: translation.excerpt,
+        location: {
+          ...frontmatter.location,
+          note: translation.locationNote ?? frontmatter.location.note,
+        },
+        route: frontmatter.route
+          ? {
+              ...frontmatter.route,
+              name: translation.routeName ?? frontmatter.route.name,
+            }
+          : frontmatter.route,
+        logistics: translation.logistics ?? frontmatter.logistics,
+        notes: translation.notes ?? frontmatter.notes,
+        images: frontmatter.images?.map((image, index) => {
+          const imageTranslation = translation.images?.[index];
+          return imageTranslation
+            ? {
+                ...image,
+                alt: imageTranslation.alt,
+                caption: imageTranslation.caption,
+              }
+            : image;
+        }),
+      }
+    : frontmatter;
+  const localizedContent = translation?.content ?? content;
 
   return {
     slug,
-    ...frontmatter,
-    content,
-    headings: extractHeadings(content),
+    ...localizedFrontmatter,
+    content: localizedContent,
+    headings: extractHeadings(localizedContent),
   };
 }
 
@@ -480,12 +519,12 @@ function formatMeasurement(measurement: CyclingMeasure<string>) {
   return measurement.display ?? `${measurement.value} ${measurement.unit}`;
 }
 
-export function getAllCyclingEntries(): CyclingSummary[] {
+export function getAllCyclingEntries(locale: Locale = DEFAULT_CONTENT_LOCALE): CyclingSummary[] {
   return getCyclingFilenames()
     .map((file) => {
       const slug = file.replace(/\.mdx$/, "");
-      const fullPath = path.join(CYCLING_DIR, file);
-      const entry = readParsedCyclingEntry(fullPath, slug);
+      const fullPath = getCyclingPath(file, locale);
+      const entry = readParsedCyclingEntry(fullPath, slug, locale);
 
       return {
         slug: entry.slug,
@@ -509,12 +548,12 @@ export function getAllCyclingEntries(): CyclingSummary[] {
     .sort(sortByRideDate);
 }
 
-export function getCyclingSearchIndex(): SearchIndexEntry[] {
+export function getCyclingSearchIndex(locale: Locale = DEFAULT_CONTENT_LOCALE): SearchIndexEntry[] {
   return getCyclingFilenames()
     .map((file) => {
       const slug = file.replace(/\.mdx$/, "");
-      const fullPath = path.join(CYCLING_DIR, file);
-      const entry = readParsedCyclingEntry(fullPath, slug);
+      const fullPath = getCyclingPath(file, locale);
+      const entry = readParsedCyclingEntry(fullPath, slug, locale);
       const headings = entry.headings.map((heading) => heading.text);
       const routeTerms = [entry.route?.name, entry.route?.start, entry.route?.finish, entry.route?.track?.title].filter(
         (term): term is string => Boolean(term),
@@ -568,11 +607,12 @@ export function getCyclingSearchIndex(): SearchIndexEntry[] {
     .sort((a, b) => +new Date(b.date) - +new Date(a.date));
 }
 
-export function getCyclingEntryBySlug(slug: string) {
-  const fullPath = path.join(CYCLING_DIR, `${slug}.mdx`);
-  if (!fs.existsSync(fullPath)) return null;
+export function getCyclingEntryBySlug(slug: string, locale: Locale = DEFAULT_CONTENT_LOCALE) {
+  const fileName = `${slug}.mdx`;
+  const basePath = path.join(CYCLING_DIR, fileName);
+  if (!fs.existsSync(basePath)) return null;
 
-  return readParsedCyclingEntry(fullPath, slug);
+  return readParsedCyclingEntry(getCyclingPath(fileName, locale), slug, locale);
 }
 
 function extractHeadings(content: string): CyclingHeading[] {

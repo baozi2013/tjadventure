@@ -7,6 +7,7 @@ import { getAllCyclingEntries } from "@/lib/cycling";
 import { getAllPosts, type PostSummary } from "@/lib/posts";
 import { createPageMetadata } from "@/lib/metadata";
 import { SiteNav } from "@/components/site-nav";
+import type { Locale } from "@/i18n/routing";
 import { resolveLocale, type LocaleParams } from "@/i18n/locale";
 
 type PageProps = {
@@ -124,11 +125,11 @@ function postToRideCard(post: PostSummary, rideType: CyclingRideType, copy: Cycl
   };
 }
 
-function getRideCards(copy: CyclingCopy) {
-  const cyclingEntries = getAllCyclingEntries();
+function getRideCards(copy: CyclingCopy, locale: Locale) {
+  const cyclingEntries = getAllCyclingEntries(locale);
   const dedicatedSlugs = new Set(cyclingEntries.map((entry) => entry.slug));
   const entryCards = cyclingEntries.map((entry) => cyclingEntryToRideCard(entry, copy));
-  const postCards = getAllPosts()
+  const postCards = getAllPosts(locale)
     .filter((post) => !dedicatedSlugs.has(post.slug))
     .map((post) => {
       const rideType = inferRideType(post);
@@ -229,7 +230,7 @@ export default async function CyclingPage({ params }: PageProps) {
       },
     },
   };
-  const rideCards = getRideCards(copy);
+  const rideCards = getRideCards(copy, locale);
   const groupedRides = CYCLING_RIDE_TYPES.map((rideType) => ({
     rideType,
     rides: rideCards.filter((ride) => ride.rideType === rideType),

@@ -1,11 +1,15 @@
 import fs from "node:fs";
 import path from "node:path";
 import matter from "gray-matter";
-import { slugFallbackLocations } from "@/data/trip-locations";
+import { getSlugFallbackLocations, localizeTripLocations } from "@/data/trip-locations";
+import { postEnglishTranslations } from "@/data/content-translations";
+import type { Locale } from "@/i18n/routing";
+import { DEFAULT_CONTENT_LOCALE, getLocalizedContentPath } from "@/lib/content-locale";
 import type { SearchIndexEntry } from "@/types/search";
 import type { TripLocation } from "@/types/posts";
 
 const POSTS_DIR = path.join(process.cwd(), "content/posts");
+const POSTS_EN_DIR = path.join(process.cwd(), "content/en/posts");
 const CATEGORY_FORMAT = /^.+\s·\s.+$/;
 const READ_TIME_FORMAT = /^[1-9]\d*\s+min$/;
 
@@ -273,23 +277,36 @@ function getPostFilenames() {
   return fs.readdirSync(POSTS_DIR).filter((file) => file.endsWith(".mdx") && !file.startsWith("_"));
 }
 
-function resolvePostLocations(slug: string, frontmatter: PostFrontmatter) {
+function resolvePostLocations(slug: string, frontmatter: PostFrontmatter, locale: Locale) {
   return frontmatter.locations && frontmatter.locations.length > 0
-    ? frontmatter.locations
-    : (slugFallbackLocations[slug] ?? []);
+    ? localizeTripLocations(frontmatter.locations, locale)
+    : getSlugFallbackLocations(slug, locale);
 }
 
-function readParsedPost(fullPath: string, slug: string): ParsedPost {
+function getPostPath(fileName: string, locale: Locale) {
+  return getLocalizedContentPath(POSTS_DIR, POSTS_EN_DIR, fileName, locale);
+}
+
+function readParsedPost(fullPath: string, slug: string, locale: Locale): ParsedPost {
   const raw = fs.readFileSync(fullPath, "utf8");
   const { data, content } = matter(raw);
   const frontmatter = parsePostFrontmatter(data, fullPath);
+  const translation = locale === "en-US" ? postEnglishTranslations[slug] : undefined;
+  const localizedFrontmatter = translation
+    ? {
+        ...frontmatter,
+        title: translation.title,
+        excerpt: translation.excerpt,
+      }
+    : frontmatter;
+  const localizedContent = translation?.content ?? content;
 
   return {
     slug,
-    frontmatter,
-    content,
-    headings: extractHeadings(content),
-    locations: resolvePostLocations(slug, frontmatter),
+    frontmatter: localizedFrontmatter,
+    content: localizedContent,
+    headings: extractHeadings(localizedContent),
+    locations: resolvePostLocations(slug, localizedFrontmatter, locale),
   };
 }
 
@@ -319,12 +336,12 @@ function extractPlainText(content: string) {
   );
 }
 
-export function getAllPosts(): PostSummary[] {
+export function getAllPosts(locale: Locale = DEFAULT_CONTENT_LOCALE): PostSummary[] {
   return getPostFilenames()
     .map((file) => {
       const slug = file.replace(/\.mdx$/, "");
-      const fullPath = path.join(POSTS_DIR, file);
-      const post = readParsedPost(fullPath, slug);
+      const fullPath = getPostPath(file, locale);
+      const post = readParsedPost(fullPath, slug, locale);
 
       return {
         slug: post.slug,
@@ -334,11 +351,12 @@ export function getAllPosts(): PostSummary[] {
     .sort(sortByDate);
 }
 
-export function getPostBySlug(slug: string) {
-  const fullPath = path.join(POSTS_DIR, `${slug}.mdx`);
-  if (!fs.existsSync(fullPath)) return null;
+export function getPostBySlug(slug: string, locale: Locale = DEFAULT_CONTENT_LOCALE) {
+  const fileName = `${slug}.mdx`;
+  const basePath = path.join(POSTS_DIR, fileName);
+  if (!fs.existsSync(basePath)) return null;
 
-  const post = readParsedPost(fullPath, slug);
+  const post = readParsedPost(getPostPath(fileName, locale), slug, locale);
 
   return {
     slug: post.slug,
@@ -349,8 +367,8 @@ export function getPostBySlug(slug: string) {
   };
 }
 
-export function getAdjacentPosts(slug: string): AdjacentPosts {
-  const posts = getAllPosts();
+export function getAdjacentPosts(slug: string, locale: Locale = DEFAULT_CONTENT_LOCALE): AdjacentPosts {
+  const posts = getAllPosts(locale);
   const currentIndex = posts.findIndex((post) => post.slug === slug);
 
   if (currentIndex === -1) {
@@ -376,13 +394,13 @@ function getTagOverlapScore(currentTags: Set<string>, candidateTags: string[] | 
   return candidateTags.reduce((score, tag) => score + (currentTags.has(tag) ? 1 : 0), 0);
 }
 
-export function getRelatedPosts(slug: string, limit = 3): RelatedPost[] {
-  const current = getAllPosts().find((post) => post.slug === slug);
+export function getRelatedPosts(slug: string, limit = 3, locale: Locale = DEFAULT_CONTENT_LOCALE): RelatedPost[] {
+  const current = getAllPosts(locale).find((post) => post.slug === slug);
   if (!current) return [];
 
   const currentTags = new Set(current.tags ?? []);
   const currentRegion = getPostRegion(current);
-  const candidates = getAllPosts().filter((post) => post.slug !== slug);
+  const candidates = getAllPosts(locale).filter((post) => post.slug !== slug);
 
   const ranked = candidates
     .map((post) => {
@@ -422,12 +440,12 @@ export function getRelatedPosts(slug: string, limit = 3): RelatedPost[] {
   }));
 }
 
-export function getSearchIndex(): SearchIndexEntry[] {
+export function getSearchIndex(locale: Locale = DEFAULT_CONTENT_LOCALE): SearchIndexEntry[] {
   return getPostFilenames()
     .map((file) => {
       const slug = file.replace(/\.mdx$/, "");
-      const fullPath = path.join(POSTS_DIR, file);
-      const post = readParsedPost(fullPath, slug);
+      const fullPath = getPostPath(file, locale);
+      const post = readParsedPost(fullPath, slug, locale);
       const region = post.frontmatter.category.split(" · ")[0];
       const body = extractPlainText(post.content);
       const headings = post.headings.map((heading) => heading.text);

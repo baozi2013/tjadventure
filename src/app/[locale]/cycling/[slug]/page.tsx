@@ -40,7 +40,7 @@ export async function generateMetadata({ params }: Params): Promise<Metadata> {
   const locale = await resolveLocale(params);
   const { slug } = await params;
   const t = await getTranslations({ locale, namespace: "CyclingDetail" });
-  const entry = getCyclingEntryBySlug(slug);
+  const entry = getCyclingEntryBySlug(slug, locale);
 
   if (!entry) {
     return createPageMetadata({
@@ -171,7 +171,7 @@ export default async function CyclingDetailPage({ params }: Params) {
   setRequestLocale(locale);
   const t = await getTranslations({ locale, namespace: "CyclingDetail" });
   const { slug } = await params;
-  const entry = getCyclingEntryBySlug(slug);
+  const entry = getCyclingEntryBySlug(slug, locale);
 
   if (!entry) notFound();
 
@@ -180,7 +180,7 @@ export default async function CyclingDetailPage({ params }: Params) {
     event: t("event"),
     gravel: t("gravel"),
   };
-  const pairedPost = getPairedPostForCyclingSlug(slug);
+  const pairedPost = getPairedPostForCyclingSlug(slug, locale);
   const routeSummary = getRouteSummary(entry, t);
   const mapLocations = getMapLocations(entry);
   const stats = [

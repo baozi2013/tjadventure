@@ -1,5 +1,6 @@
 import { getCyclingEntryBySlug } from "@/lib/cycling";
 import { getPostBySlug, type PostSummary } from "@/lib/posts";
+import type { Locale } from "@/i18n/routing";
 import type { CyclingEntry, CyclingSummary } from "@/types/cycling";
 
 function toCyclingSummary(entry: CyclingEntry): CyclingSummary {
@@ -23,13 +24,13 @@ function toCyclingSummary(entry: CyclingEntry): CyclingSummary {
   };
 }
 
-export function getPairedCyclingEntryForPostSlug(slug: string): CyclingSummary | null {
-  const entry = getCyclingEntryBySlug(slug);
+export function getPairedCyclingEntryForPostSlug(slug: string, locale?: Locale): CyclingSummary | null {
+  const entry = getCyclingEntryBySlug(slug, locale);
   return entry ? toCyclingSummary(entry) : null;
 }
 
-export function getPairedPostForCyclingSlug(slug: string): PostSummary | null {
-  const post = getPostBySlug(slug);
+export function getPairedPostForCyclingSlug(slug: string, locale?: Locale): PostSummary | null {
+  const post = getPostBySlug(slug, locale);
 
   if (!post) return null;
 

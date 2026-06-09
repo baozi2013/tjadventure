@@ -28,7 +28,7 @@ export default async function Home({ params }: PageProps) {
   const locale = await resolveLocale(params);
   setRequestLocale(locale);
   const t = await getTranslations({ locale, namespace: "Home" });
-  const allPosts = getAllPosts();
+  const allPosts = getAllPosts(locale);
   const highlightSlugsInOrder = ["maui-2025-family-trip", "teton-yellowstone-2024"];
   const preferredHighlights = highlightSlugsInOrder
     .map((slug) => allPosts.find((post) => post.slug === slug))

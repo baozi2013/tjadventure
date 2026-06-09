@@ -32,7 +32,7 @@ export async function generateMetadata({ params }: Params): Promise<Metadata> {
   const locale = await resolveLocale(params);
   const { slug } = await params;
   const t = await getTranslations({ locale, namespace: "PostDetail" });
-  const post = getPostBySlug(slug);
+  const post = getPostBySlug(slug, locale);
 
   if (!post) {
     return createPageMetadata({
@@ -62,7 +62,7 @@ export default async function PostDetail({ params }: Params) {
   setRequestLocale(locale);
   const t = await getTranslations({ locale, namespace: "PostDetail" });
   const { slug } = await params;
-  const post = getPostBySlug(slug);
+  const post = getPostBySlug(slug, locale);
 
   if (!post) notFound();
 
@@ -73,9 +73,9 @@ export default async function PostDetail({ params }: Params) {
     recent: t("recent"),
   };
 
-  const adjacentPosts = getAdjacentPosts(slug);
-  const relatedPosts = getRelatedPosts(slug);
-  const pairedCyclingEntry = getPairedCyclingEntryForPostSlug(slug);
+  const adjacentPosts = getAdjacentPosts(slug, locale);
+  const relatedPosts = getRelatedPosts(slug, 3, locale);
+  const pairedCyclingEntry = getPairedCyclingEntryForPostSlug(slug, locale);
   const postSummary = {
     slug: post.slug,
     ...post.frontmatter,

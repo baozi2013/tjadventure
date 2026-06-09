@@ -28,7 +28,7 @@ export default async function TripsPage({ params }: PageProps) {
   const locale = await resolveLocale(params);
   setRequestLocale(locale);
   const t = await getTranslations({ locale, namespace: "Trips" });
-  const allPosts = getAllPosts();
+  const allPosts = getAllPosts(locale);
   const groupedPosts = Array.from(
     allPosts.reduce((map, post) => {
       const region = post.category.split(" · ")[0];

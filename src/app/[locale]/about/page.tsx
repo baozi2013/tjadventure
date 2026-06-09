@@ -40,7 +40,7 @@ export default async function AboutPage({ params }: PageProps) {
 
         <div className="mt-8 space-y-7">
           <article>
-            <h2 className="text-xl font-semibold">Tian 天</h2>
+            <h2 className="text-xl font-semibold">{t("tianName")}</h2>
             <p className="mt-2 text-base leading-8 text-neutral-700 dark:text-neutral-300">
               {t("tian1")}
             </p>
@@ -62,7 +62,7 @@ export default async function AboutPage({ params }: PageProps) {
           </article>
 
           <article>
-            <h2 className="text-xl font-semibold">Jane 静</h2>
+            <h2 className="text-xl font-semibold">{t("janeName")}</h2>
             <p className="mt-2 text-base leading-8 text-neutral-700 dark:text-neutral-300">
               {t("jane1")}
             </p>
@@ -84,7 +84,7 @@ export default async function AboutPage({ params }: PageProps) {
           </article>
 
           <article>
-            <h2 className="text-xl font-semibold">William 大宝 包子</h2>
+            <h2 className="text-xl font-semibold">{t("williamName")}</h2>
             <div className="relative mt-4 h-72 w-full overflow-hidden rounded-2xl border border-black/10 sm:h-96 dark:border-white/10">
               <Image
                 src="/about/william.png"
@@ -97,7 +97,7 @@ export default async function AboutPage({ params }: PageProps) {
           </article>
 
           <article>
-            <h2 className="text-xl font-semibold">George 二宝 汤圆</h2>
+            <h2 className="text-xl font-semibold">{t("georgeName")}</h2>
             <div className="relative mt-4 h-72 w-full overflow-hidden rounded-2xl border border-black/10 sm:h-96 dark:border-white/10">
               <Image
                 src="/about/george.png"

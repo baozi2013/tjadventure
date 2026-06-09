@@ -1,4 +1,5 @@
 import type { TripLocation } from "@/types/posts";
+import type { Locale } from "@/i18n/routing";
 
 type TripLocationsBySlug = Record<string, TripLocation[]>;
 
@@ -125,3 +126,126 @@ export const slugFallbackLocations: TripLocationsBySlug = {
     { name: "Tunnel View", lat: 37.7151, lng: -119.6767, note: "经典全景" },
   ],
 };
+
+const englishNoteByChineseNote: Record<string, string> = {
+  "Big Sur 海岸线": "Big Sur coastline",
+  "海边与日落": "Beach and sunset",
+  "经典瀑布机位": "Classic waterfall viewpoint",
+  "Crater Lake 人像机位": "Crater Lake portrait viewpoint",
+  "熔岩洞穴探险": "Lava cave exploration",
+  "Lassen 高海拔湖景": "High-elevation Lassen lake view",
+  "经典金色丘陵": "Classic golden badlands",
+  "北美最低点盐滩": "Lowest-point salt flats in North America",
+  "俯瞰 Badwater Basin": "Overlook above Badwater Basin",
+  "追花起点": "Wildflower route start",
+  "白天与日落": "Daytime and sunset stop",
+  "山脊观景": "Ridge viewpoint",
+  "Pas Robles 品酒": "Paso Robles wine tasting",
+  "火山湖核心区": "Crater Lake core area",
+  "转场到 Lassen": "Transfer toward Lassen",
+  "地热徒步": "Geothermal hike",
+  "露营收尾": "Campground finish",
+  "沙丘": "Sand dunes",
+  "地貌观景点": "Badlands viewpoint",
+  "北美最低点": "Lowest point in North America",
+  "全景收尾": "Panoramic finish",
+  "主区域": "Main area",
+  "湖边步道": "Lakeside trail",
+  "露营地": "Campground",
+  "湖畔活动": "Lakeside activities",
+  "历史建筑": "Historic buildings",
+  "庄园花园": "Estate garden",
+  "红杉步道": "Redwood trail",
+  "山顶全景": "Ridge panorama",
+  "森林小火车": "Forest railroad",
+  "环湖起点": "Lake loop start",
+  "南岸经典机位": "Classic South Shore photo stop",
+  "环湖收尾": "Lake loop finish",
+  "LA 城市观景": "Los Angeles city view",
+  "城市地标": "City landmark",
+  "海边主点位": "Main beach stop",
+  "海边步道": "Beach boardwalk",
+  "进山路线": "Route into the mountains",
+  "住宿与补给": "Lodging and supplies",
+  "山景机位": "Mountain-view photo stop",
+  "湖边收尾": "Lakeside finish",
+  "入山第一站": "First stop into the mountains",
+  "赛事起点": "Event start",
+  "温泉地貌": "Hot-spring geology",
+  "进出岛": "Island arrival and departure",
+  "高海拔观景": "High-elevation viewpoint",
+  "海边活动": "Beach activities",
+  "日落海滩": "Sunset beach",
+  "西北海岸打卡": "Northwest coast photo stop",
+  "云海日落": "Sunset above the clouds",
+  "返程前轻徒步": "Short hike before flying home",
+  "街头艺术": "Street art",
+  "海滩": "Beach",
+  "餐厅": "Restaurant",
+  "航天展区": "Space center exhibits",
+  "节日海边": "Holiday waterfront",
+  "沿线经典点": "Classic stop along the drive",
+  "街区收尾": "Neighborhood finish",
+  "进山补给": "Mountain town supply stop",
+  "雪地体验": "Snow day stop",
+  "山地缆车": "Mountain tram",
+  "国家公园": "National park",
+  "沙漠打卡": "Desert photo stop",
+  "主活动": "Main event",
+  "Gradient Canopy 公共艺术与 Google Store": "Gradient Canopy public art and Google Store",
+  "粉色盐塘与湿地栈道": "Pink salt ponds and wetland boardwalk",
+  "2026 首登，山腰折返": "First 2026 climb, turnaround below the summit",
+  "Monterey 海边和码头开场": "Monterey waterfront and wharf opening",
+  "蓝天、白沙滩和海浪": "Blue sky, white sand, and waves",
+  "海鸟、礁石和观景台": "Sea birds, rocks, and overlook",
+  "17-Mile Drive 经典机位": "Classic 17-Mile Drive viewpoint",
+  "小镇散步收尾": "Town walk finish",
+  "亲子玩雪": "Family snow play",
+  "新手区练习滑行": "Beginner slope practice",
+  "约书亚树仙人掌海": "Joshua Tree cactus garden",
+  "巨石地貌": "Boulder landscape",
+  "市区放松打卡": "Downtown wind-down stop",
+  "活动后顺路外拍": "Post-event photo stop",
+  "入口打卡": "Entrance stop",
+  "东侧进园与补水": "East-side entry and water stop",
+  "误入加练版的起点": "Start of the accidental harder route",
+  "洞穴收尾": "Cave finish",
+  "洞穴探险": "Cave hike",
+  "复活节主活动": "Main Easter event",
+  "主题拍照区": "Themed photo area",
+  "Sea Otter 主会场": "Sea Otter main venue",
+  "骑行路段": "Ride segment",
+  "海边收尾": "Waterfront finish",
+  "起终点区域": "Start and finish area",
+  "赛道中段": "Mid-course section",
+  "Teton 入园": "Grand Teton entrance",
+  "Teton 核心点": "Grand Teton core stop",
+  "地热区": "Geothermal area",
+  "巨杉核心打卡": "Main giant sequoia stop",
+  "登顶看山脉与峡谷": "Summit view of mountains and canyon",
+  "路边瀑布补给点": "Roadside waterfall break",
+  "公路尽头的绿地与山": "Meadow and mountains at Road's End",
+  "经典喷发点": "Classic geyser stop",
+  "观景台俯瞰": "Overlook view",
+  "火瀑布拍摄位": "Firefall photo spot",
+  "徒步起点": "Trailhead",
+  "瀑布近景": "Waterfall close-up",
+  "经典全景": "Classic panorama",
+};
+
+export function localizeTripLocations(locations: TripLocation[], locale: Locale): TripLocation[] {
+  if (locale !== "en-US") {
+    return locations;
+  }
+
+  return locations.map((location) => ({
+    ...location,
+    note: location.note ? (englishNoteByChineseNote[location.note] ?? location.note) : undefined,
+  }));
+}
+
+export function getSlugFallbackLocations(slug: string, locale: Locale): TripLocation[] {
+  const locations = slugFallbackLocations[slug] ?? [];
+
+  return localizeTripLocations(locations, locale);
+}

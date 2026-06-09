@@ -81,7 +81,7 @@ export function SearchExperience() {
       setError(null);
 
       try {
-        const response = await fetch("/search-index.json", {
+        const response = await fetch(`/search-index.json?locale=${encodeURIComponent(locale)}`, {
           headers: {
             Accept: "application/json",
           },
@@ -111,7 +111,7 @@ export function SearchExperience() {
     return () => {
       isCancelled = true;
     };
-  }, []);
+  }, [locale]);
 
   const posts = data?.posts ?? EMPTY_POSTS;
   const quickSuggestions = useMemo(() => getQuickSuggestions(posts), [posts]);

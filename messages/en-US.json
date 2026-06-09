@@ -7,7 +7,7 @@
     "cycling": "Cycling",
     "search": "Search",
     "languageLabel": "Language",
-    "zh": "中文",
+    "zh": "Chinese",
     "en": "EN"
   },
   "Home": {
@@ -43,7 +43,11 @@
     "jane2": "The real boss of the family, mom of two, athlete, lululemon loyalist, and Just Dance pro.",
     "janeGear": "Camera kit: iPhone 16 Pro.",
     "tianAlt": "Tian at Lake Tahoe",
-    "janeAlt": "Jane at Joshua Tree"
+    "janeAlt": "Jane at Joshua Tree",
+    "tianName": "Tian",
+    "janeName": "Jane",
+    "williamName": "William",
+    "georgeName": "George"
   },
   "Trips": {
     "metadataTitle": "All Trips",
@@ -108,7 +112,15 @@
   "Gears": {
     "metadataTitle": "Gear",
     "metadataDescription": "See the camping, photo, and road-trip gear TJ Adventure actually uses on family trips.",
-    "title": "Gear"
+    "title": "Gear",
+    "missingTitle": "Content Missing",
+    "missingDescription": "This gear list file could not be found yet."
+  },
+  "TripMap": {
+    "loading": "Loading map...",
+    "title": "Trip Map",
+    "stops": "{count} stops",
+    "track": "Route track included"
   },
   "StoryRideSwitch": {
     "currentPage": "Current page",

@@ -43,7 +43,11 @@
     "jane2": "一家之主，两娃的辣妈，运动健将，lululemon 深度患者，just dance 达人。",
     "janeGear": "拍摄设备：iPhone 16 Pro。",
     "tianAlt": "Tian 在 Lake Tahoe",
-    "janeAlt": "Jane 在 Joshua Tree"
+    "janeAlt": "Jane 在 Joshua Tree",
+    "tianName": "Tian 天",
+    "janeName": "Jane 静",
+    "williamName": "William 大宝 包子",
+    "georgeName": "George 二宝 汤圆"
   },
   "Trips": {
     "metadataTitle": "全部游记",
@@ -108,7 +112,15 @@
   "Gears": {
     "metadataTitle": "装备",
     "metadataDescription": "TJ Adventure 家庭旅行中真正使用的露营、摄影和自驾装备。",
-    "title": "装备"
+    "title": "装备",
+    "missingTitle": "内容缺失",
+    "missingDescription": "暂未找到该装备清单文件。"
+  },
+  "TripMap": {
+    "loading": "地图加载中...",
+    "title": "行程地图",
+    "stops": "共 {count} 个点位",
+    "track": "含路线轨迹"
   },
   "StoryRideSwitch": {
     "currentPage": "当前页面",
