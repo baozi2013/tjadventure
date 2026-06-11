@@ -27,10 +27,6 @@ export const slugFallbackLocations: TripLocationsBySlug = {
     { name: "Badwater Basin", lat: 36.2303, lng: -116.7677, note: "北美最低点" },
     { name: "Dante's View", lat: 36.2216, lng: -116.7265, note: "全景收尾" },
   ],
-  "del-valle-2026": [
-    { name: "Del Valle Regional Park", lat: 37.5881, lng: -121.6885, note: "主区域" },
-    { name: "East Shore Trail", lat: 37.5997, lng: -121.6935, note: "湖边步道" },
-  ],
   "fallen-leaf-2023": [
     { name: "Fallen Leaf Campground", lat: 38.9241, lng: -120.0569, note: "露营地" },
     { name: "Fallen Leaf Lake", lat: 38.9288, lng: -120.0449, note: "湖畔活动" },
@@ -86,10 +82,6 @@ export const slugFallbackLocations: TripLocationsBySlug = {
     { name: "Palm Springs Aerial Tramway", lat: 33.8389, lng: -116.6122, note: "山地缆车" },
     { name: "Joshua Tree Hidden Valley", lat: 34.0121, lng: -116.1670, note: "国家公园" },
     { name: "Cholla Cactus Garden", lat: 33.9252, lng: -115.9268, note: "沙漠打卡" },
-  ],
-  "pasifika-steam-fest-2026": [
-    { name: "Pasifika STEAM Fest Venue", lat: 37.5375, lng: -122.2997, note: "主活动" },
-    { name: "Roblox Office (San Mateo)", lat: 37.5372, lng: -122.2999, note: "活动后顺路外拍" },
   ],
   "pinnicle-2025": [
     { name: "Pinnacles East Entrance", lat: 36.4860, lng: -121.1825, note: "入口打卡" },

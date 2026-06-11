@@ -22,6 +22,15 @@ const CYCLING_ELEVATION_UNITS = new Set(["ft", "m"]);
 const CYCLING_ROUTE_SURFACES = new Set(["road", "gravel", "paved-trail", "mixed"]);
 const CYCLING_IMAGE_ROLES = new Set(["cover", "route", "gallery"]);
 const MAP_TRACK_FORMATS = new Set(["geojson"]);
+const INLINE_TRIP_LOCATION_SLUGS = new Set([
+  "mission-peak-2026-first-climb",
+  "monterey-17-mile-drive-carmel-2026",
+  "del-valle-2026",
+  "google-alviso-2026",
+  "pasifika-steam-fest-2026",
+  "pinnacles-detour-2026",
+  "sequoia-kings-canyon-2026",
+]);
 
 function isRecord(value) {
   return typeof value === "object" && value !== null && !Array.isArray(value);
@@ -194,6 +203,19 @@ function validateFrontmatter(data, filePath, expectedLocale) {
               errors.push(`"locations[${index}].image" must be a local "/..." path or http(s) URL.`);
             }
           }
+        }
+      });
+    }
+  }
+
+  const slug = path.basename(filePath, ".mdx");
+  if (expectedLocale === "zh-CN" && INLINE_TRIP_LOCATION_SLUGS.has(slug)) {
+    if (!Array.isArray(data.locations) || data.locations.length === 0) {
+      errors.push(`"${slug}" must keep trip map locations inline in frontmatter.`);
+    } else {
+      data.locations.forEach((item, index) => {
+        if (!isRecord(item) || typeof item.image !== "string" || item.image.trim().length === 0) {
+          errors.push(`"locations[${index}].image" is required for migrated trip map markers.`);
         }
       });
     }
