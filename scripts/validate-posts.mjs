@@ -4,14 +4,18 @@ import matter from "gray-matter";
 
 const ROOT_DIR = process.cwd();
 const POSTS_DIR = path.join(ROOT_DIR, "content/posts");
+const POSTS_EN_DIR = path.join(ROOT_DIR, "content/en/posts");
 const CYCLING_DIR = path.join(ROOT_DIR, "content/cycling");
+const CYCLING_EN_DIR = path.join(ROOT_DIR, "content/en/cycling");
 const PUBLIC_DIR = path.join(ROOT_DIR, "public");
 
+const SUPPORTED_LOCALES = new Set(["zh-CN", "en-US"]);
 const DATE_FORMAT = /^\d{4}-\d{2}-\d{2}$/;
 const CATEGORY_FORMAT = /^.+\s·\s.+$/;
 const READ_TIME_FORMAT = /^[1-9]\d*\s+min$/;
 const HTTP_FORMAT = /^https?:\/\//;
 const MOVING_TIME_FORMAT = /^\d{1,3}:[0-5]\d:[0-5]\d$/;
+const TRANSLATION_KEY_FORMAT = /^[a-z0-9][a-z0-9-]*$/;
 const CYCLING_RIDE_TYPES = new Set(["road", "gravel", "event"]);
 const CYCLING_DISTANCE_UNITS = new Set(["mi", "km"]);
 const CYCLING_ELEVATION_UNITS = new Set(["ft", "m"]);
@@ -53,12 +57,41 @@ function validateLocalPublicAsset(rawPath, fieldName, filePath, errors) {
   }
 }
 
-function validateFrontmatter(data, filePath) {
+function validateContentIdentity(data, expectedLocale, errors) {
+  if (typeof data.locale !== "string" || data.locale.trim().length === 0) {
+    errors.push('"locale" must be a non-empty string.');
+  } else {
+    const locale = data.locale.trim();
+    if (!SUPPORTED_LOCALES.has(locale)) {
+      errors.push(`"locale" must be one of: ${Array.from(SUPPORTED_LOCALES).join(", ")}.`);
+    } else if (locale !== expectedLocale) {
+      errors.push(`"locale" must match its content directory (${expectedLocale}).`);
+    }
+  }
+
+  if (typeof data.translationKey !== "string" || data.translationKey.trim().length === 0) {
+    errors.push('"translationKey" must be a non-empty string.');
+  } else if (!TRANSLATION_KEY_FORMAT.test(data.translationKey.trim())) {
+    errors.push('"translationKey" must use lowercase letters, numbers, and hyphens.');
+  }
+
+  if (data.canonicalLocale != null) {
+    if (typeof data.canonicalLocale !== "string" || data.canonicalLocale.trim().length === 0) {
+      errors.push('"canonicalLocale" must be a non-empty string when provided.');
+    } else if (!SUPPORTED_LOCALES.has(data.canonicalLocale.trim())) {
+      errors.push(`"canonicalLocale" must be one of: ${Array.from(SUPPORTED_LOCALES).join(", ")}.`);
+    }
+  }
+}
+
+function validateFrontmatter(data, filePath, expectedLocale) {
   const errors = [];
 
   if (!isRecord(data)) {
     return ["frontmatter must be an object."];
   }
+
+  validateContentIdentity(data, expectedLocale, errors);
 
   const requiredTextFields = ["title", "excerpt", "date", "category", "readTime", "coverImage"];
   for (const key of requiredTextFields) {
@@ -468,12 +501,14 @@ function validateCyclingImages(images, filePath, errors) {
   });
 }
 
-function validateCyclingFrontmatter(data, filePath) {
+function validateCyclingFrontmatter(data, filePath, expectedLocale) {
   const errors = [];
 
   if (!isRecord(data)) {
     return ["frontmatter must be an object."];
   }
+
+  validateContentIdentity(data, expectedLocale, errors);
 
   validateRequiredTextFields(data, ["title", "excerpt", "rideDate", "rideType", "movingTime", "stravaUrl", "coverImage"], errors);
 
@@ -524,7 +559,7 @@ function listContentFiles(directory) {
     const fullPath = path.join(directory, entry.name);
 
     if (entry.isDirectory()) {
-      files.push(...listPostFiles(fullPath));
+      files.push(...listContentFiles(fullPath));
       continue;
     }
 
@@ -536,30 +571,78 @@ function listContentFiles(directory) {
   return files;
 }
 
+function toContentRecords(files, expectedLocale) {
+  return files.map((filePath) => ({ filePath, expectedLocale }));
+}
+
 function validateFiles(files, validateFn) {
   const errorsByFile = [];
   const seenSlugs = new Set();
+  const seenTranslationKeys = new Set();
+  const records = [];
 
-  for (const filePath of files) {
+  for (const { filePath, expectedLocale } of files) {
     const raw = fs.readFileSync(filePath, "utf8");
     const { data } = matter(raw);
     const relativePath = path.relative(ROOT_DIR, filePath);
 
     const slug = path.basename(filePath, ".mdx");
-    if (seenSlugs.has(slug)) {
+    const locale =
+      isRecord(data) && typeof data.locale === "string" && SUPPORTED_LOCALES.has(data.locale.trim())
+        ? data.locale.trim()
+        : expectedLocale;
+    const slugKey = `${locale}:${slug}`;
+    if (seenSlugs.has(slugKey)) {
       errorsByFile.push({
         file: relativePath,
-        errors: [`Duplicate slug detected: "${slug}".`],
+        errors: [`Duplicate slug detected for locale "${locale}": "${slug}".`],
       });
       continue;
     }
-    seenSlugs.add(slug);
+    seenSlugs.add(slugKey);
 
-    const validationErrors = validateFn(data, relativePath);
+    const validationErrors = validateFn(data, relativePath, expectedLocale);
+    const translationKey =
+      isRecord(data) && typeof data.translationKey === "string" && data.translationKey.trim().length > 0
+        ? data.translationKey.trim()
+        : null;
+    const translationKeyKey = translationKey ? `${locale}:${translationKey}` : null;
+    if (translationKeyKey && seenTranslationKeys.has(translationKeyKey)) {
+      validationErrors.push(`Duplicate translationKey detected for locale "${locale}": "${translationKey}".`);
+    } else if (translationKeyKey) {
+      seenTranslationKeys.add(translationKeyKey);
+    }
+
     if (validationErrors.length > 0) {
       errorsByFile.push({
         file: relativePath,
         errors: validationErrors,
+      });
+    }
+
+    if (translationKey && SUPPORTED_LOCALES.has(locale)) {
+      records.push({
+        file: relativePath,
+        locale,
+        translationKey,
+        canonicalLocale:
+          isRecord(data) && typeof data.canonicalLocale === "string" && SUPPORTED_LOCALES.has(data.canonicalLocale.trim())
+            ? data.canonicalLocale.trim()
+            : null,
+      });
+    }
+  }
+
+  const siblings = new Set(records.map((record) => `${record.locale}:${record.translationKey}`));
+  for (const record of records) {
+    if (!record.canonicalLocale || record.canonicalLocale === record.locale) continue;
+
+    if (!siblings.has(`${record.canonicalLocale}:${record.translationKey}`)) {
+      errorsByFile.push({
+        file: record.file,
+        errors: [
+          `"canonicalLocale" points to missing sibling (${record.canonicalLocale}, ${record.translationKey}).`,
+        ],
       });
     }
   }
@@ -568,8 +651,14 @@ function validateFiles(files, validateFn) {
 }
 
 function main() {
-  const postFiles = listContentFiles(POSTS_DIR);
-  const cyclingFiles = listContentFiles(CYCLING_DIR);
+  const postFiles = [
+    ...toContentRecords(listContentFiles(POSTS_DIR), "zh-CN"),
+    ...toContentRecords(listContentFiles(POSTS_EN_DIR), "en-US"),
+  ];
+  const cyclingFiles = [
+    ...toContentRecords(listContentFiles(CYCLING_DIR), "zh-CN"),
+    ...toContentRecords(listContentFiles(CYCLING_EN_DIR), "en-US"),
+  ];
 
   if (postFiles.length === 0 && cyclingFiles.length === 0) {
     console.log("[validate-posts] No content files found. Skipping.");

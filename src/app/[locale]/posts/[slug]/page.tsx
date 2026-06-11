@@ -7,7 +7,14 @@ import { compileMDX } from "next-mdx-remote/rsc";
 import remarkGfm from "remark-gfm";
 import rehypeSlug from "rehype-slug";
 import rehypeAutolinkHeadings from "rehype-autolink-headings";
-import { getAdjacentPosts, getAllPosts, getPostBySlug, getRelatedPosts, type RelatedPost } from "@/lib/posts";
+import {
+  getAdjacentPosts,
+  getAllPosts,
+  getPostBySlug,
+  getPostLanguageAlternates,
+  getRelatedPosts,
+  type RelatedPost,
+} from "@/lib/posts";
 import { mdxComponents } from "@/components/mdx-components";
 import { TripMap } from "@/components/trip-map";
 import { createPageMetadata } from "@/lib/metadata";
@@ -25,7 +32,7 @@ type Params = {
 export const dynamicParams = false;
 
 export function generateStaticParams() {
-  return routing.locales.flatMap((locale) => getAllPosts().map((post) => ({ locale, slug: post.slug })));
+  return routing.locales.flatMap((locale) => getAllPosts(locale).map((post) => ({ locale, slug: post.slug })));
 }
 
 export async function generateMetadata({ params }: Params): Promise<Metadata> {
@@ -48,6 +55,7 @@ export async function generateMetadata({ params }: Params): Promise<Metadata> {
     description: post.frontmatter.excerpt,
     pathname: `/posts/${slug}`,
     locale,
+    languageAlternates: getPostLanguageAlternates(post.frontmatter.translationKey),
     image: post.frontmatter.coverImage,
     keywords: post.frontmatter.tags,
     type: "article",

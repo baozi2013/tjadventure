@@ -11,6 +11,11 @@ type LocalizedRouteInput = {
   priority: number;
 };
 
+type LocalizedPathname = {
+  locale: Locale;
+  pathname: string;
+};
+
 function getLocalizedAlternates(pathname: string) {
   return {
     languages: {
@@ -34,6 +39,28 @@ function createLocalizedRoutes({
     priority,
     alternates: getLocalizedAlternates(pathname),
   }));
+}
+
+function getContentAlternates(pathnames: LocalizedPathname[]) {
+  const languages = Object.fromEntries(
+    pathnames.map(({ locale, pathname }) => [locale, getAbsoluteUrl(getLocalizedPathname(pathname, locale))]),
+  ) as Record<string, string>;
+  const defaultPathname = pathnames.find((item) => item.locale === routing.defaultLocale) ?? pathnames[0];
+
+  if (defaultPathname) {
+    languages["x-default"] = getAbsoluteUrl(getLocalizedPathname(defaultPathname.pathname, defaultPathname.locale));
+  }
+
+  return { languages };
+}
+
+function groupByTranslationKey<T extends { translationKey: string }>(items: T[]) {
+  return items.reduce((map, item) => {
+    const current = map.get(item.translationKey) ?? [];
+    current.push(item);
+    map.set(item.translationKey, current);
+    return map;
+  }, new Map<string, T[]>());
 }
 
 export default function sitemap(): MetadataRoute.Sitemap {
@@ -70,22 +97,50 @@ export default function sitemap(): MetadataRoute.Sitemap {
     }),
   ];
 
-  const postRoutes: MetadataRoute.Sitemap = getAllPosts().flatMap((post) =>
-    createLocalizedRoutes({
+  const localizedPosts = routing.locales.flatMap((locale) =>
+    getAllPosts(locale).map((post) => ({
+      locale,
+      translationKey: post.translationKey,
+      post,
       pathname: `/posts/${post.slug}`,
-      lastModified: new Date(post.date),
-      changeFrequency: "monthly",
-      priority: 0.8,
-    }),
+    })),
+  );
+  const postRoutes: MetadataRoute.Sitemap = Array.from(groupByTranslationKey(localizedPosts).values()).flatMap(
+    (items) => {
+      const pathnames = items.map(({ locale, pathname }) => ({ locale, pathname }));
+      const alternates = getContentAlternates(pathnames);
+
+      return items.map(({ locale, pathname, post }) => ({
+        url: getAbsoluteUrl(getLocalizedPathname(pathname, locale)),
+        lastModified: new Date(post.date),
+        changeFrequency: "monthly",
+        priority: 0.8,
+        alternates,
+      }));
+    },
   );
 
-  const cyclingRoutes: MetadataRoute.Sitemap = getAllCyclingEntries().flatMap((entry) =>
-    createLocalizedRoutes({
+  const localizedCyclingEntries = routing.locales.flatMap((locale) =>
+    getAllCyclingEntries(locale).map((entry) => ({
+      locale,
+      translationKey: entry.translationKey,
+      entry,
       pathname: `/cycling/${entry.slug}`,
-      lastModified: new Date(entry.rideDate),
-      changeFrequency: "monthly",
-      priority: 0.7,
-    }),
+    })),
+  );
+  const cyclingRoutes: MetadataRoute.Sitemap = Array.from(groupByTranslationKey(localizedCyclingEntries).values()).flatMap(
+    (items) => {
+      const pathnames = items.map(({ locale, pathname }) => ({ locale, pathname }));
+      const alternates = getContentAlternates(pathnames);
+
+      return items.map(({ locale, pathname, entry }) => ({
+        url: getAbsoluteUrl(getLocalizedPathname(pathname, locale)),
+        lastModified: new Date(entry.rideDate),
+        changeFrequency: "monthly",
+        priority: 0.7,
+        alternates,
+      }));
+    },
   );
 
   return [...staticRoutes, ...postRoutes, ...cyclingRoutes];

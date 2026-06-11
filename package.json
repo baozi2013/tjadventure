@@ -6,6 +6,7 @@
     "dev": "next dev --webpack",
     "validate:posts": "node scripts/validate-posts.mjs",
     "import:strava-cycling": "node scripts/import-strava-cycling.mjs",
+    "export:strava-track": "node scripts/export-strava-track.mjs",
     "strava:oauth": "node scripts/strava-oauth.mjs",
     "sync:strava-cycling": "node scripts/sync-strava-cycling.mjs",
     "review:strava-cycling": "node scripts/review-strava-cycling-drafts.mjs",

@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { getLocalizedPathname, type Locale } from "@/i18n/routing";
+import { getLocalizedPathname, routing, type Locale } from "@/i18n/routing";
 
 export const SITE_NAME = "TJ Adventure";
 export const DEFAULT_DESCRIPTION =
@@ -22,6 +22,7 @@ type PageMetadataInput = {
   description: string;
   pathname: string;
   locale?: Locale;
+  languageAlternates?: Partial<Record<Locale, string>>;
   image?: string;
   keywords?: string[];
   type?: "website" | "article";
@@ -37,6 +38,33 @@ function normalizeSiteUrl(rawUrl: string | undefined) {
 
   const withProtocol = /^https?:\/\//.test(rawUrl) ? rawUrl : `https://${rawUrl}`;
   return withProtocol.replace(/\/$/, "");
+}
+
+function getAlternateLanguages(pathname: string, languageAlternates?: Partial<Record<Locale, string>>) {
+  const alternatePathnames =
+    languageAlternates ??
+    ({
+      "zh-CN": pathname,
+      "en-US": pathname,
+    } satisfies Partial<Record<Locale, string>>);
+
+  const languages = Object.fromEntries(
+    Object.entries(alternatePathnames).map(([alternateLocale, alternatePathname]) => [
+      alternateLocale,
+      getLocalizedPathname(alternatePathname, alternateLocale as Locale),
+    ]),
+  ) as Record<string, string>;
+
+  const defaultEntry =
+    alternatePathnames[routing.defaultLocale] != null
+      ? ([routing.defaultLocale, alternatePathnames[routing.defaultLocale]] as const)
+      : (Object.entries(alternatePathnames)[0] as [Locale, string] | undefined);
+
+  if (defaultEntry?.[1]) {
+    languages["x-default"] = getLocalizedPathname(defaultEntry[1], defaultEntry[0]);
+  }
+
+  return languages;
 }
 
 export function getSiteUrl() {
@@ -62,6 +90,7 @@ export function createPageMetadata({
   description,
   pathname,
   locale = "zh-CN",
+  languageAlternates,
   image = DEFAULT_OG_IMAGE,
   keywords,
   type = "website",
@@ -76,11 +105,7 @@ export function createPageMetadata({
     description,
     alternates: {
       canonical,
-      languages: {
-        "zh-CN": getLocalizedPathname(pathname, "zh-CN"),
-        "en-US": getLocalizedPathname(pathname, "en-US"),
-        "x-default": getLocalizedPathname(pathname, "zh-CN"),
-      },
+      languages: getAlternateLanguages(pathname, languageAlternates),
     },
     keywords,
     openGraph: {

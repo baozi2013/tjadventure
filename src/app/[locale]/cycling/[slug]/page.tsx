@@ -7,7 +7,7 @@ import { compileMDX } from "next-mdx-remote/rsc";
 import remarkGfm from "remark-gfm";
 import rehypeSlug from "rehype-slug";
 import rehypeAutolinkHeadings from "rehype-autolink-headings";
-import { getAllCyclingEntries, getCyclingEntryBySlug } from "@/lib/cycling";
+import { getAllCyclingEntries, getCyclingEntryBySlug, getCyclingLanguageAlternates } from "@/lib/cycling";
 import { createPageMetadata } from "@/lib/metadata";
 import { mdxComponents } from "@/components/mdx-components";
 import { SiteNav } from "@/components/site-nav";
@@ -33,7 +33,7 @@ const dateFormatter = new Intl.DateTimeFormat("en-US", {
 export const dynamicParams = false;
 
 export function generateStaticParams() {
-  return routing.locales.flatMap((locale) => getAllCyclingEntries().map((entry) => ({ locale, slug: entry.slug })));
+  return routing.locales.flatMap((locale) => getAllCyclingEntries(locale).map((entry) => ({ locale, slug: entry.slug })));
 }
 
 export async function generateMetadata({ params }: Params): Promise<Metadata> {
@@ -62,6 +62,7 @@ export async function generateMetadata({ params }: Params): Promise<Metadata> {
     description: entry.excerpt,
     pathname: `/cycling/${slug}`,
     locale,
+    languageAlternates: getCyclingLanguageAlternates(entry.translationKey),
     image: entry.coverImage,
     keywords: entry.tags,
     type: "article",

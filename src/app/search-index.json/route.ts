@@ -14,6 +14,7 @@ export function GET(request: Request) {
   return Response.json(
     {
       generatedAt: new Date().toISOString(),
+      locale,
       posts,
     },
     {

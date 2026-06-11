@@ -1,8 +1,7 @@
 import fs from "node:fs";
 import path from "node:path";
 import matter from "gray-matter";
-import { cyclingEnglishTranslations } from "@/data/content-translations";
-import type { Locale } from "@/i18n/routing";
+import { isSupportedLocale, routing, type Locale } from "@/i18n/routing";
 import { DEFAULT_CONTENT_LOCALE, getLocalizedContentPath } from "@/lib/content-locale";
 import {
   CYCLING_DISTANCE_UNITS,
@@ -31,6 +30,7 @@ const CYCLING_DIR = path.join(process.cwd(), "content/cycling");
 const CYCLING_EN_DIR = path.join(process.cwd(), "content/en/cycling");
 const DATE_FORMAT = /^\d{4}-\d{2}-\d{2}$/;
 const MOVING_TIME_FORMAT = /^\d{1,3}:[0-5]\d:[0-5]\d$/;
+const TRANSLATION_KEY_FORMAT = /^[a-z0-9][a-z0-9-]*$/;
 
 type RawFrontmatter = Record<string, unknown>;
 
@@ -51,13 +51,47 @@ function failCyclingFrontmatter(filePath: string, message: string): never {
   throw new Error(`[cycling] Invalid frontmatter in "${filePath}": ${message}`);
 }
 
-function readRequiredText(frontmatter: RawFrontmatter, key: keyof CyclingFrontmatter, filePath: string): string {
+function readRequiredText(frontmatter: RawFrontmatter, key: string, filePath: string): string {
   const value = frontmatter[key];
   if (typeof value !== "string" || value.trim().length === 0) {
     failCyclingFrontmatter(filePath, `"${key}" must be a non-empty string.`);
   }
 
   return value.trim();
+}
+
+function readLocale(frontmatter: RawFrontmatter, key: "locale" | "canonicalLocale", filePath: string): Locale {
+  const value = readRequiredText(frontmatter, key, filePath);
+  if (!isSupportedLocale(value)) {
+    failCyclingFrontmatter(filePath, `"${key}" must be one of: ${routing.locales.join(", ")}.`);
+  }
+
+  return value;
+}
+
+function readOptionalLocale(
+  frontmatter: RawFrontmatter,
+  key: "canonicalLocale",
+  filePath: string,
+): Locale | undefined {
+  if (frontmatter[key] == null) return undefined;
+  return readLocale(frontmatter, key, filePath);
+}
+
+function validateContentLocale(locale: Locale, expectedLocale: Locale, filePath: string) {
+  if (locale !== expectedLocale) {
+    failCyclingFrontmatter(filePath, `"locale" must match its content directory (${expectedLocale}).`);
+  }
+
+  return locale;
+}
+
+function validateTranslationKey(rawTranslationKey: string, filePath: string): string {
+  if (!TRANSLATION_KEY_FORMAT.test(rawTranslationKey)) {
+    failCyclingFrontmatter(filePath, `"translationKey" must use lowercase letters, numbers, and hyphens.`);
+  }
+
+  return rawTranslationKey;
 }
 
 function readOptionalText(record: RawFrontmatter, key: string, filePath: string, fieldName: string): string | undefined {
@@ -390,13 +424,16 @@ function readOptionalImages(frontmatter: RawFrontmatter, filePath: string): Cycl
   });
 }
 
-export function parseCyclingFrontmatter(data: unknown, filePath: string): CyclingFrontmatter {
+export function parseCyclingFrontmatter(data: unknown, filePath: string, expectedLocale: Locale): CyclingFrontmatter {
   if (!isObjectRecord(data)) {
     failCyclingFrontmatter(filePath, "frontmatter must be an object.");
   }
 
   const title = readRequiredText(data, "title", filePath);
   const excerpt = readRequiredText(data, "excerpt", filePath);
+  const locale = validateContentLocale(readLocale(data, "locale", filePath), expectedLocale, filePath);
+  const translationKey = validateTranslationKey(readRequiredText(data, "translationKey", filePath), filePath);
+  const canonicalLocale = readOptionalLocale(data, "canonicalLocale", filePath);
   const rideDate = validateDate(readRequiredText(data, "rideDate", filePath), filePath);
   const rideType = readRideType(readRequiredText(data, "rideType", filePath), filePath);
   const distance = readMeasurement<CyclingDistanceUnit>(data, "distance", CYCLING_DISTANCE_UNITS, filePath);
@@ -419,6 +456,9 @@ export function parseCyclingFrontmatter(data: unknown, filePath: string): Cyclin
   return {
     title,
     excerpt,
+    locale,
+    translationKey,
+    canonicalLocale,
     rideDate,
     rideType,
     distance,
@@ -435,57 +475,31 @@ export function parseCyclingFrontmatter(data: unknown, filePath: string): Cyclin
   };
 }
 
-function getCyclingFilenames() {
-  if (!fs.existsSync(CYCLING_DIR)) return [];
+function getCyclingDirectory(locale: Locale) {
+  return locale === "en-US" ? CYCLING_EN_DIR : CYCLING_DIR;
+}
 
-  return fs.readdirSync(CYCLING_DIR).filter((file) => file.endsWith(".mdx") && !file.startsWith("_"));
+function getCyclingFilenames(locale: Locale = DEFAULT_CONTENT_LOCALE) {
+  const cyclingDir = getCyclingDirectory(locale);
+  if (!fs.existsSync(cyclingDir)) return [];
+
+  return fs.readdirSync(cyclingDir).filter((file) => file.endsWith(".mdx") && !file.startsWith("_"));
 }
 
 function getCyclingPath(fileName: string, locale: Locale) {
-  return getLocalizedContentPath(CYCLING_DIR, CYCLING_EN_DIR, fileName, locale);
+  return getLocalizedContentPath(CYCLING_DIR, CYCLING_EN_DIR, fileName, locale, { fallbackToDefault: false });
 }
 
 function readParsedCyclingEntry(fullPath: string, slug: string, locale: Locale): CyclingEntry {
   const raw = fs.readFileSync(fullPath, "utf8");
   const { data, content } = matter(raw);
-  const frontmatter = parseCyclingFrontmatter(data, fullPath);
-  const translation = locale === "en-US" ? cyclingEnglishTranslations[slug] : undefined;
-  const localizedFrontmatter = translation
-    ? {
-        ...frontmatter,
-        title: translation.title,
-        excerpt: translation.excerpt,
-        location: {
-          ...frontmatter.location,
-          note: translation.locationNote ?? frontmatter.location.note,
-        },
-        route: frontmatter.route
-          ? {
-              ...frontmatter.route,
-              name: translation.routeName ?? frontmatter.route.name,
-            }
-          : frontmatter.route,
-        logistics: translation.logistics ?? frontmatter.logistics,
-        notes: translation.notes ?? frontmatter.notes,
-        images: frontmatter.images?.map((image, index) => {
-          const imageTranslation = translation.images?.[index];
-          return imageTranslation
-            ? {
-                ...image,
-                alt: imageTranslation.alt,
-                caption: imageTranslation.caption,
-              }
-            : image;
-        }),
-      }
-    : frontmatter;
-  const localizedContent = translation?.content ?? content;
+  const frontmatter = parseCyclingFrontmatter(data, fullPath, locale);
 
   return {
     slug,
-    ...localizedFrontmatter,
-    content: localizedContent,
-    headings: extractHeadings(localizedContent),
+    ...frontmatter,
+    content,
+    headings: extractHeadings(content),
   };
 }
 
@@ -520,7 +534,7 @@ function formatMeasurement(measurement: CyclingMeasure<string>) {
 }
 
 export function getAllCyclingEntries(locale: Locale = DEFAULT_CONTENT_LOCALE): CyclingSummary[] {
-  return getCyclingFilenames()
+  return getCyclingFilenames(locale)
     .map((file) => {
       const slug = file.replace(/\.mdx$/, "");
       const fullPath = getCyclingPath(file, locale);
@@ -530,6 +544,9 @@ export function getAllCyclingEntries(locale: Locale = DEFAULT_CONTENT_LOCALE): C
         slug: entry.slug,
         title: entry.title,
         excerpt: entry.excerpt,
+        locale: entry.locale,
+        translationKey: entry.translationKey,
+        canonicalLocale: entry.canonicalLocale,
         rideDate: entry.rideDate,
         rideType: entry.rideType,
         distance: entry.distance,
@@ -549,7 +566,7 @@ export function getAllCyclingEntries(locale: Locale = DEFAULT_CONTENT_LOCALE): C
 }
 
 export function getCyclingSearchIndex(locale: Locale = DEFAULT_CONTENT_LOCALE): SearchIndexEntry[] {
-  return getCyclingFilenames()
+  return getCyclingFilenames(locale)
     .map((file) => {
       const slug = file.replace(/\.mdx$/, "");
       const fullPath = getCyclingPath(file, locale);
@@ -589,6 +606,8 @@ export function getCyclingSearchIndex(locale: Locale = DEFAULT_CONTENT_LOCALE): 
 
       return {
         slug: entry.slug,
+        locale: entry.locale,
+        translationKey: entry.translationKey,
         href: `/cycling/${entry.slug}`,
         title: entry.title,
         excerpt: entry.excerpt,
@@ -609,10 +628,20 @@ export function getCyclingSearchIndex(locale: Locale = DEFAULT_CONTENT_LOCALE): 
 
 export function getCyclingEntryBySlug(slug: string, locale: Locale = DEFAULT_CONTENT_LOCALE) {
   const fileName = `${slug}.mdx`;
-  const basePath = path.join(CYCLING_DIR, fileName);
-  if (!fs.existsSync(basePath)) return null;
+  const fullPath = getCyclingPath(fileName, locale);
+  if (!fs.existsSync(fullPath)) return null;
 
-  return readParsedCyclingEntry(getCyclingPath(fileName, locale), slug, locale);
+  return readParsedCyclingEntry(fullPath, slug, locale);
+}
+
+export function getCyclingLanguageAlternates(translationKey: string): Partial<Record<Locale, string>> {
+  return Object.fromEntries(
+    routing.locales.flatMap((locale) =>
+      getAllCyclingEntries(locale)
+        .filter((entry) => entry.translationKey === translationKey)
+        .map((entry) => [locale, `/cycling/${entry.slug}`] as const),
+    ),
+  ) as Partial<Record<Locale, string>>;
 }
 
 function extractHeadings(content: string): CyclingHeading[] {

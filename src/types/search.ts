@@ -1,5 +1,9 @@
+import type { Locale } from "@/i18n/routing";
+
 export type SearchIndexEntry = {
   slug: string;
+  locale: Locale;
+  translationKey: string;
   href: string;
   title: string;
   excerpt: string;

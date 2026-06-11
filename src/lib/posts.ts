@@ -2,8 +2,7 @@ import fs from "node:fs";
 import path from "node:path";
 import matter from "gray-matter";
 import { getSlugFallbackLocations, localizeTripLocations } from "@/data/trip-locations";
-import { postEnglishTranslations } from "@/data/content-translations";
-import type { Locale } from "@/i18n/routing";
+import { isSupportedLocale, routing, type Locale } from "@/i18n/routing";
 import { DEFAULT_CONTENT_LOCALE, getLocalizedContentPath } from "@/lib/content-locale";
 import type { SearchIndexEntry } from "@/types/search";
 import type { TripLocation } from "@/types/posts";
@@ -12,10 +11,14 @@ const POSTS_DIR = path.join(process.cwd(), "content/posts");
 const POSTS_EN_DIR = path.join(process.cwd(), "content/en/posts");
 const CATEGORY_FORMAT = /^.+\s·\s.+$/;
 const READ_TIME_FORMAT = /^[1-9]\d*\s+min$/;
+const TRANSLATION_KEY_FORMAT = /^[a-z0-9][a-z0-9-]*$/;
 
 export type PostFrontmatter = {
   title: string;
   excerpt: string;
+  locale: Locale;
+  translationKey: string;
+  canonicalLocale?: Locale;
   date: string;
   category: string;
   readTime: string;
@@ -69,13 +72,47 @@ function failFrontmatter(filePath: string, message: string): never {
   throw new Error(`[posts] Invalid frontmatter in "${filePath}": ${message}`);
 }
 
-function readRequiredText(frontmatter: RawFrontmatter, key: keyof PostFrontmatter, filePath: string): string {
+function readRequiredText(frontmatter: RawFrontmatter, key: string, filePath: string): string {
   const value = frontmatter[key];
   if (typeof value !== "string" || value.trim().length === 0) {
     failFrontmatter(filePath, `"${key}" must be a non-empty string.`);
   }
 
   return value.trim();
+}
+
+function readLocale(frontmatter: RawFrontmatter, key: "locale" | "canonicalLocale", filePath: string): Locale {
+  const value = readRequiredText(frontmatter, key, filePath);
+  if (!isSupportedLocale(value)) {
+    failFrontmatter(filePath, `"${key}" must be one of: ${routing.locales.join(", ")}.`);
+  }
+
+  return value;
+}
+
+function readOptionalLocale(
+  frontmatter: RawFrontmatter,
+  key: "canonicalLocale",
+  filePath: string,
+): Locale | undefined {
+  if (frontmatter[key] == null) return undefined;
+  return readLocale(frontmatter, key, filePath);
+}
+
+function validateContentLocale(locale: Locale, expectedLocale: Locale, filePath: string) {
+  if (locale !== expectedLocale) {
+    failFrontmatter(filePath, `"locale" must match its content directory (${expectedLocale}).`);
+  }
+
+  return locale;
+}
+
+function validateTranslationKey(rawTranslationKey: string, filePath: string): string {
+  if (!TRANSLATION_KEY_FORMAT.test(rawTranslationKey)) {
+    failFrontmatter(filePath, `"translationKey" must use lowercase letters, numbers, and hyphens.`);
+  }
+
+  return rawTranslationKey;
 }
 
 function validateDate(rawDate: string, filePath: string): string {
@@ -245,13 +282,16 @@ function readOptionalLocations(frontmatter: RawFrontmatter, filePath: string): T
   return locations;
 }
 
-function parsePostFrontmatter(data: unknown, filePath: string): PostFrontmatter {
+function parsePostFrontmatter(data: unknown, filePath: string, expectedLocale: Locale): PostFrontmatter {
   if (!isObjectRecord(data)) {
     failFrontmatter(filePath, "frontmatter must be an object.");
   }
 
   const title = readRequiredText(data, "title", filePath);
   const excerpt = readRequiredText(data, "excerpt", filePath);
+  const locale = validateContentLocale(readLocale(data, "locale", filePath), expectedLocale, filePath);
+  const translationKey = validateTranslationKey(readRequiredText(data, "translationKey", filePath), filePath);
+  const canonicalLocale = readOptionalLocale(data, "canonicalLocale", filePath);
   const date = validateDate(readRequiredText(data, "date", filePath), filePath);
   const category = validateCategory(readRequiredText(data, "category", filePath), filePath);
   const readTime = validateReadTime(readRequiredText(data, "readTime", filePath), filePath);
@@ -262,6 +302,9 @@ function parsePostFrontmatter(data: unknown, filePath: string): PostFrontmatter 
   return {
     title,
     excerpt,
+    locale,
+    translationKey,
+    canonicalLocale,
     date,
     category,
     readTime,
@@ -271,10 +314,15 @@ function parsePostFrontmatter(data: unknown, filePath: string): PostFrontmatter 
   };
 }
 
-function getPostFilenames() {
-  if (!fs.existsSync(POSTS_DIR)) return [];
+function getPostDirectory(locale: Locale) {
+  return locale === "en-US" ? POSTS_EN_DIR : POSTS_DIR;
+}
 
-  return fs.readdirSync(POSTS_DIR).filter((file) => file.endsWith(".mdx") && !file.startsWith("_"));
+function getPostFilenames(locale: Locale = DEFAULT_CONTENT_LOCALE) {
+  const postsDir = getPostDirectory(locale);
+  if (!fs.existsSync(postsDir)) return [];
+
+  return fs.readdirSync(postsDir).filter((file) => file.endsWith(".mdx") && !file.startsWith("_"));
 }
 
 function resolvePostLocations(slug: string, frontmatter: PostFrontmatter, locale: Locale) {
@@ -284,29 +332,20 @@ function resolvePostLocations(slug: string, frontmatter: PostFrontmatter, locale
 }
 
 function getPostPath(fileName: string, locale: Locale) {
-  return getLocalizedContentPath(POSTS_DIR, POSTS_EN_DIR, fileName, locale);
+  return getLocalizedContentPath(POSTS_DIR, POSTS_EN_DIR, fileName, locale, { fallbackToDefault: false });
 }
 
 function readParsedPost(fullPath: string, slug: string, locale: Locale): ParsedPost {
   const raw = fs.readFileSync(fullPath, "utf8");
   const { data, content } = matter(raw);
-  const frontmatter = parsePostFrontmatter(data, fullPath);
-  const translation = locale === "en-US" ? postEnglishTranslations[slug] : undefined;
-  const localizedFrontmatter = translation
-    ? {
-        ...frontmatter,
-        title: translation.title,
-        excerpt: translation.excerpt,
-      }
-    : frontmatter;
-  const localizedContent = translation?.content ?? content;
+  const frontmatter = parsePostFrontmatter(data, fullPath, locale);
 
   return {
     slug,
-    frontmatter: localizedFrontmatter,
-    content: localizedContent,
-    headings: extractHeadings(localizedContent),
-    locations: resolvePostLocations(slug, localizedFrontmatter, locale),
+    frontmatter,
+    content,
+    headings: extractHeadings(content),
+    locations: resolvePostLocations(slug, frontmatter, locale),
   };
 }
 
@@ -337,7 +376,7 @@ function extractPlainText(content: string) {
 }
 
 export function getAllPosts(locale: Locale = DEFAULT_CONTENT_LOCALE): PostSummary[] {
-  return getPostFilenames()
+  return getPostFilenames(locale)
     .map((file) => {
       const slug = file.replace(/\.mdx$/, "");
       const fullPath = getPostPath(file, locale);
@@ -353,10 +392,10 @@ export function getAllPosts(locale: Locale = DEFAULT_CONTENT_LOCALE): PostSummar
 
 export function getPostBySlug(slug: string, locale: Locale = DEFAULT_CONTENT_LOCALE) {
   const fileName = `${slug}.mdx`;
-  const basePath = path.join(POSTS_DIR, fileName);
-  if (!fs.existsSync(basePath)) return null;
+  const fullPath = getPostPath(fileName, locale);
+  if (!fs.existsSync(fullPath)) return null;
 
-  const post = readParsedPost(getPostPath(fileName, locale), slug, locale);
+  const post = readParsedPost(fullPath, slug, locale);
 
   return {
     slug: post.slug,
@@ -441,7 +480,7 @@ export function getRelatedPosts(slug: string, limit = 3, locale: Locale = DEFAUL
 }
 
 export function getSearchIndex(locale: Locale = DEFAULT_CONTENT_LOCALE): SearchIndexEntry[] {
-  return getPostFilenames()
+  return getPostFilenames(locale)
     .map((file) => {
       const slug = file.replace(/\.mdx$/, "");
       const fullPath = getPostPath(file, locale);
@@ -465,6 +504,8 @@ export function getSearchIndex(locale: Locale = DEFAULT_CONTENT_LOCALE): SearchI
 
       return {
         slug: post.slug,
+        locale: post.frontmatter.locale,
+        translationKey: post.frontmatter.translationKey,
         href: `/posts/${post.slug}`,
         title: post.frontmatter.title,
         excerpt: post.frontmatter.excerpt,
@@ -481,6 +522,16 @@ export function getSearchIndex(locale: Locale = DEFAULT_CONTENT_LOCALE): SearchI
       };
     })
     .sort(sortByDate);
+}
+
+export function getPostLanguageAlternates(translationKey: string): Partial<Record<Locale, string>> {
+  return Object.fromEntries(
+    routing.locales.flatMap((locale) =>
+      getAllPosts(locale)
+        .filter((post) => post.translationKey === translationKey)
+        .map((post) => [locale, `/posts/${post.slug}`] as const),
+    ),
+  ) as Partial<Record<Locale, string>>;
 }
 
 function extractHeadings(content: string): Heading[] {

@@ -1,4 +1,5 @@
 import type { MapRouteTrack } from "./maps";
+import type { Locale } from "@/i18n/routing";
 
 export const CYCLING_RIDE_TYPES = ["road", "gravel", "event"] as const;
 
@@ -52,6 +53,9 @@ export type CyclingImage = {
 export type CyclingFrontmatter = {
   title: string;
   excerpt: string;
+  locale: Locale;
+  translationKey: string;
+  canonicalLocale?: Locale;
   rideDate: string;
   rideType: CyclingRideType;
   distance: CyclingMeasure<CyclingDistanceUnit>;
