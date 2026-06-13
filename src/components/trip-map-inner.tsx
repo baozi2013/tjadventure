@@ -44,11 +44,12 @@ function FitLocations({ points }: { points: LatLngTuple[] }) {
     if (points.length === 0) return;
 
     if (points.length === 1) {
-      map.setView(points[0], 11);
+      map.setView(points[0], 11, { animate: false });
       return;
     }
 
     map.fitBounds(points, {
+      animate: false,
       padding: [36, 36],
       maxZoom: 12,
     });
@@ -235,6 +236,7 @@ export function TripMapInner({ locations, fallbackImage, track }: TripMapInnerPr
       <MapContainer
         center={trackPoints.length > 0 ? getCenter(trackPoints) : center}
         zoom={boundsPoints.length > 1 ? 5 : 11}
+        zoomAnimation={false}
         scrollWheelZoom={false}
         className="h-[22rem] w-full"
       >
