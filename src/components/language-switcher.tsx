@@ -2,7 +2,8 @@
 
 import Link from "next/link";
 import { useLocale, useTranslations } from "next-intl";
-import { usePathname, useSearchParams } from "next/navigation";
+import { useSearchParams } from "next/navigation";
+import { usePathname } from "@/i18n/navigation";
 import { getLocalizedPathname, stripLocalePrefix, type Locale } from "@/i18n/routing";
 
 function cx(...classes: Array<string | false | null | undefined>) {
