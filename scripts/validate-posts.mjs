@@ -55,6 +55,11 @@ function validateLocalPublicAsset(rawPath, fieldName, filePath, errors) {
     return;
   }
 
+  if (rawPath.startsWith("//")) {
+    errors.push(`"${fieldName}" must not use protocol-relative URLs.`);
+    return;
+  }
+
   if (rawPath.includes("..")) {
     errors.push(`"${fieldName}" must not contain ".." segments.`);
     return;

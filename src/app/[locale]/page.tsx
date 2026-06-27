@@ -87,7 +87,7 @@ export default async function Home({ params }: PageProps) {
 
       <section className="mb-12">
         <div className="mb-5 flex items-end justify-between">
-          <h3 className="text-xl font-semibold">{t("seasonalTitle")}</h3>
+          <h2 className="text-xl font-semibold">{t("seasonalTitle")}</h2>
           <p className="text-sm text-neutral-500">{t("seasonalSubtitle")}</p>
         </div>
 
@@ -100,7 +100,7 @@ export default async function Home({ params }: PageProps) {
 
       <section id="all-trips">
         <div className="mb-5 flex items-end justify-between">
-          <h3 className="text-xl font-semibold">{t("recentTitle")}</h3>
+          <h2 className="text-xl font-semibold">{t("recentTitle")}</h2>
           <Link href="/trips" className="text-sm text-neutral-500 hover:text-neutral-900 dark:hover:text-white">
             {t("viewAll")}
           </Link>

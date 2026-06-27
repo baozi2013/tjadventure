@@ -157,6 +157,10 @@ function validateLocalAssetPath(rawPath: string, fieldName: string, filePath: st
     failFrontmatter(filePath, `"${fieldName}" must start with "/" when using local assets.`);
   }
 
+  if (rawPath.startsWith("//")) {
+    failFrontmatter(filePath, `"${fieldName}" must not use protocol-relative URLs.`);
+  }
+
   if (rawPath.includes("..")) {
     failFrontmatter(filePath, `"${fieldName}" must not contain ".." segments.`);
   }

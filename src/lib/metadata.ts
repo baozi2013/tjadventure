@@ -169,7 +169,7 @@ export function getSiteMetadataDefaults(locale: Locale = "zh-CN"): Metadata {
     twitter: {
       card: "summary_large_image",
       title: SITE_NAME,
-      description: DEFAULT_DESCRIPTION,
+      description,
       images: [DEFAULT_OG_IMAGE],
     },
     robots: {
