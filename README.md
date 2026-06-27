@@ -14,9 +14,40 @@ Useful checks:
 
 ```bash
 npm run validate:posts
+npm run audit:images
+npm run check:images
 npm run lint
 npm run build
 ```
+
+## Image Asset Workflow
+
+Travel and cycling content should reference web-ready local images. The build
+enforces a `5 MB` budget for images referenced from content frontmatter or MDX.
+
+Audit referenced images:
+
+```bash
+npm run audit:images
+```
+
+Fail when referenced images exceed the budget:
+
+```bash
+npm run check:images
+```
+
+Generate optimized WebP derivatives for over-budget referenced images and update
+content references to `/optimized/...` paths:
+
+```bash
+npm run optimize:images -- --write --replace-references
+```
+
+The optimizer keeps original files in `public/trips`; it only writes derivatives
+under `public/optimized` and rewrites content references. Use
+`npm run optimize:images -- --limit 5` for a dry run against the largest five
+referenced assets before writing.
 
 ## Project Structure
 

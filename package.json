@@ -5,12 +5,15 @@
   "scripts": {
     "dev": "next dev --webpack",
     "validate:posts": "node scripts/validate-posts.mjs",
+    "audit:images": "node scripts/image-assets.mjs audit",
+    "check:images": "node scripts/image-assets.mjs audit --fail-on-over-budget",
+    "optimize:images": "node scripts/image-assets.mjs optimize",
     "import:strava-cycling": "node scripts/import-strava-cycling.mjs",
     "export:strava-track": "node scripts/export-strava-track.mjs",
     "strava:oauth": "node scripts/strava-oauth.mjs",
     "sync:strava-cycling": "node scripts/sync-strava-cycling.mjs",
     "review:strava-cycling": "node scripts/review-strava-cycling-drafts.mjs",
-    "build": "npm run validate:posts && next build",
+    "build": "npm run validate:posts && npm run check:images && next build",
     "start": "next start",
     "lint": "eslint"
   },
@@ -37,6 +40,7 @@
     "@types/react-dom": "^19",
     "eslint": "^9",
     "eslint-config-next": "16.1.6",
+    "sharp": "^0.35.2",
     "tailwindcss": "^4",
     "typescript": "^5"
   }
