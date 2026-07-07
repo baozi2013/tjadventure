@@ -10,6 +10,8 @@ const CONTENT_DIRS = [
   "content/en/posts",
   "content/cycling",
   "content/en/cycling",
+  "content/learning",
+  "content/en/learning",
 ].map((directory) => path.join(ROOT_DIR, directory));
 const DEFAULT_MAX_SIZE_MB = 5;
 const DEFAULT_MAX_WIDTH = 2000;
