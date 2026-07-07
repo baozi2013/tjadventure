@@ -316,13 +316,21 @@ function escapeMdxAttribute(value) {
   return value.replaceAll("&", "&amp;").replaceAll('"', "&quot;");
 }
 
+// Fetched Strava page metadata is untrusted; neutralize "-->" so it cannot close
+// the HTML comment early and let arbitrary content escape into live MDX.
+function escapeMdxComment(value) {
+  return value.replaceAll("-->", "--&gt;");
+}
+
 function buildDraft(reference, metadata, options, slug) {
   const title = metadata.title || `Strava ride ${reference.activityId}`;
   const rideDate = metadata.rideDate || "TODO: YYYY-MM-DD";
   const movingTime = metadata.movingTime || "TODO: H:MM:SS";
   const coverImage = options.coverImage || "/trips/TODO/cover.jpg";
   const routeSurface = options.rideType === "gravel" ? "gravel" : "road";
-  const mediaHint = metadata.imageHint || "No public image hint found; add a confirmed local cover photo.";
+  const mediaHint = escapeMdxComment(
+    metadata.imageHint || "No public image hint found; add a confirmed local cover photo.",
+  );
   const tokenLine = options.embedToken
     ? `\n  token="${escapeMdxAttribute(options.embedToken)}"`
     : "";

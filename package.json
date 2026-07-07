@@ -15,7 +15,8 @@
     "review:strava-cycling": "node scripts/review-strava-cycling-drafts.mjs",
     "build": "npm run validate:posts && npm run check:images && next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "test": "vitest run"
   },
   "dependencies": {
     "@vercel/analytics": "^2.0.1",
@@ -42,6 +43,7 @@
     "eslint-config-next": "16.1.6",
     "sharp": "^0.35.2",
     "tailwindcss": "^4",
-    "typescript": "^5"
+    "typescript": "^5",
+    "vitest": "^4.1.10"
   }
 }

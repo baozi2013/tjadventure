@@ -7,7 +7,7 @@ export const DEFAULT_DESCRIPTION =
 export const DEFAULT_OG_IMAGE = "/branding/TJ_Adventure_patagonia_banner.jpg";
 const DEFAULT_SITE_URL = "http://localhost:3000";
 
-const DEFAULT_DESCRIPTIONS: Record<Locale, string> = {
+export const DEFAULT_DESCRIPTIONS: Record<Locale, string> = {
   "zh-CN": "家庭旅行故事、路线笔记和可以真正复用的实用攻略。",
   "en-US": DEFAULT_DESCRIPTION,
 };

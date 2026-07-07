@@ -215,6 +215,14 @@ function validateFrontmatter(data, filePath, expectedLocale) {
     }
   }
 
+  if (data.featured != null && typeof data.featured !== "boolean") {
+    errors.push(`"featured" must be a boolean when provided.`);
+  }
+
+  if (data.featuredOrder != null && (typeof data.featuredOrder !== "number" || !Number.isInteger(data.featuredOrder))) {
+    errors.push(`"featuredOrder" must be an integer when provided.`);
+  }
+
   const slug = path.basename(filePath, ".mdx");
   if (expectedLocale === "zh-CN" && INLINE_TRIP_LOCATION_SLUGS.has(slug)) {
     if (!Array.isArray(data.locations) || data.locations.length === 0) {

@@ -17,6 +17,7 @@ npm run validate:posts
 npm run audit:images
 npm run check:images
 npm run lint
+npm run test
 npm run build
 ```
 
@@ -201,21 +202,24 @@ http://xxx.xx.xx.xx:3000
 
 ### One-command deploy script (from Mac)
 
+`NAS_USER` and `NAS_HOST` are required and have no built-in defaults; set them
+in your shell profile or pass them inline:
+
 ```bash
 chmod +x scripts/deploy-nas.sh
-./scripts/deploy-nas.sh
+NAS_USER='your_user' NAS_HOST='xxx.xx.xx.xx' ./scripts/deploy-nas.sh
 ```
 
 With SSH tunnel (open local `http://localhost:13000`):
 
 ```bash
-./scripts/deploy-nas.sh --tunnel
+NAS_USER='your_user' NAS_HOST='xxx.xx.xx.xx' ./scripts/deploy-nas.sh --tunnel
 ```
 
 If your NAS repo is not default path:
 
 ```bash
-REMOTE_DIR='~/projects/tjadventure' ./scripts/deploy-nas.sh
+NAS_USER='your_user' NAS_HOST='xxx.xx.xx.xx' REMOTE_DIR='~/projects/tjadventure' ./scripts/deploy-nas.sh
 ```
 
 To publish canonical and sitemap URLs under a public domain instead of the default NAS address:

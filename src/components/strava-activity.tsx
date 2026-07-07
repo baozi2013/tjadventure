@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
+import { useTranslations } from "next-intl";
 
 const STRAVA_EMBED_SCRIPT_SRC = "https://strava-embeds.com/embed.js";
 
@@ -17,7 +18,7 @@ type StravaActivityProps = {
   fromEmbed?: boolean;
 };
 
-function loadStravaEmbedScript(onReady: () => void) {
+function loadStravaEmbedScript(onReady: () => void, onError: () => void) {
   if (window.__STRAVA_EMBED_BOOTSTRAP__) {
     onReady();
     return undefined;
@@ -28,16 +29,24 @@ function loadStravaEmbedScript(onReady: () => void) {
   );
   if (existingScript) {
     existingScript.addEventListener("load", onReady, { once: true });
-    return () => existingScript.removeEventListener("load", onReady);
+    existingScript.addEventListener("error", onError, { once: true });
+    return () => {
+      existingScript.removeEventListener("load", onReady);
+      existingScript.removeEventListener("error", onError);
+    };
   }
 
   const script = document.createElement("script");
   script.src = STRAVA_EMBED_SCRIPT_SRC;
   script.async = true;
   script.addEventListener("load", onReady, { once: true });
+  script.addEventListener("error", onError, { once: true });
   document.body.appendChild(script);
 
-  return () => script.removeEventListener("load", onReady);
+  return () => {
+    script.removeEventListener("load", onReady);
+    script.removeEventListener("error", onError);
+  };
 }
 
 export function StravaActivity({
@@ -46,6 +55,15 @@ export function StravaActivity({
   embedStyle = "standard",
   fromEmbed = false,
 }: StravaActivityProps) {
+  const t = useTranslations("StravaActivity");
+  const [loadedForId, setLoadedForId] = useState(id);
+  const [hasError, setHasError] = useState(false);
+
+  if (id !== loadedForId) {
+    setLoadedForId(id);
+    setHasError(false);
+  }
+
   useEffect(() => {
     let isMounted = true;
 
@@ -54,7 +72,12 @@ export function StravaActivity({
       window.__STRAVA_EMBED_BOOTSTRAP__?.();
     };
 
-    const cleanup = loadStravaEmbedScript(bootstrap);
+    const handleError = () => {
+      if (!isMounted) return;
+      setHasError(true);
+    };
+
+    const cleanup = loadStravaEmbedScript(bootstrap, handleError);
     return () => {
       isMounted = false;
       cleanup?.();
@@ -62,6 +85,22 @@ export function StravaActivity({
   }, [id, token, embedStyle, fromEmbed]);
 
   if (!id) return null;
+
+  if (hasError) {
+    return (
+      <div className="strava-embed-frame">
+        <a
+          href={`https://www.strava.com/activities/${id}`}
+          target="_blank"
+          rel="noreferrer"
+          className="flex flex-col items-center justify-center gap-2 rounded-2xl border border-dashed border-black/15 bg-neutral-50 px-5 py-8 text-center text-sm text-neutral-600 transition hover:bg-neutral-100 dark:border-white/15 dark:bg-neutral-900 dark:text-neutral-300 dark:hover:bg-neutral-800"
+        >
+          <span className="font-medium text-neutral-900 dark:text-white">{t("unavailableTitle")}</span>
+          <span>{t("openOnStrava")}</span>
+        </a>
+      </div>
+    );
+  }
 
   return (
     <div className="strava-embed-frame">

@@ -45,6 +45,8 @@
     "janeGear": "Camera kit: iPhone 16 Pro.",
     "tianAlt": "Tian at Lake Tahoe",
     "janeAlt": "Jane at Joshua Tree",
+    "williamAlt": "William, the family's older son, smiling in a portrait photo",
+    "georgeAlt": "George, the family's younger son, smiling in a portrait photo",
     "tianName": "Tian",
     "janeName": "Jane",
     "williamName": "William",
@@ -113,6 +115,18 @@
     "published": "Published",
     "contents": "Contents"
   },
+  "NotFound": {
+    "title": "Page Not Found",
+    "description": "The page you're looking for doesn't exist or may have moved.",
+    "backHome": "Back to home"
+  },
+  "ErrorPage": {
+    "eyebrow": "Something Went Wrong",
+    "title": "An unexpected error occurred",
+    "description": "Try again, or head back to the homepage.",
+    "retry": "Try again",
+    "backHome": "Back to home"
+  },
   "Search": {
     "metadataTitle": "Search Stories and Rides",
     "metadataDescription": "Search TJ Adventure trip stories and cycling rides by destination, tags, landmarks, and route details.",
@@ -159,6 +173,10 @@
     "rideLabel": "Ride log",
     "rideDescription": "Route, distance, climbing, and key details from the ride day.",
     "rideCta": "View ride log"
+  },
+  "StravaActivity": {
+    "unavailableTitle": "Strava embed unavailable",
+    "openOnStrava": "Open the activity on Strava"
   },
   "PostDetail": {
     "notFoundTitle": "Post Not Found",

@@ -45,6 +45,8 @@
     "janeGear": "拍摄设备：iPhone 16 Pro。",
     "tianAlt": "Tian 在 Lake Tahoe",
     "janeAlt": "Jane 在 Joshua Tree",
+    "williamAlt": "William（大宝）的微笑肖像照",
+    "georgeAlt": "George（二宝）的微笑肖像照",
     "tianName": "Tian 天",
     "janeName": "Jane 静",
     "williamName": "William 大宝 包子",
@@ -113,6 +115,18 @@
     "published": "发布时间",
     "contents": "目录"
   },
+  "NotFound": {
+    "title": "页面未找到",
+    "description": "你访问的页面不存在，或者已经被移动。",
+    "backHome": "返回首页"
+  },
+  "ErrorPage": {
+    "eyebrow": "出错了",
+    "title": "发生了意外错误",
+    "description": "请重试，或者返回首页。",
+    "retry": "重试",
+    "backHome": "返回首页"
+  },
   "Search": {
     "metadataTitle": "搜索游记和骑行",
     "metadataDescription": "按目的地、标签、地标和路线细节搜索 TJ Adventure 的旅行故事和骑行记录。",
@@ -159,6 +173,10 @@
     "rideLabel": "骑行记录",
     "rideDescription": "路线、距离、爬升和骑行当天的关键细节。",
     "rideCta": "查看 ride log"
+  },
+  "StravaActivity": {
+    "unavailableTitle": "Strava 内嵌加载失败",
+    "openOnStrava": "在 Strava 上查看活动"
   },
   "PostDetail": {
     "notFoundTitle": "文章未找到",

@@ -29,10 +29,9 @@ export default async function Home({ params }: PageProps) {
   setRequestLocale(locale);
   const t = await getTranslations({ locale, namespace: "Home" });
   const allPosts = getAllPosts(locale);
-  const highlightSlugsInOrder = ["maui-2025-family-trip", "teton-yellowstone-2024"];
-  const preferredHighlights = highlightSlugsInOrder
-    .map((slug) => allPosts.find((post) => post.slug === slug))
-    .filter((post): post is (typeof allPosts)[number] => Boolean(post));
+  const preferredHighlights = allPosts
+    .filter((post) => post.featured)
+    .sort((a, b) => (a.featuredOrder ?? Number.MAX_SAFE_INTEGER) - (b.featuredOrder ?? Number.MAX_SAFE_INTEGER));
   const fallbackHighlights = allPosts.filter((post) => !preferredHighlights.some((item) => item.slug === post.slug));
   const seasonalHighlights = [...preferredHighlights, ...fallbackHighlights].slice(0, 3);
   const highlightSlugs = new Set(seasonalHighlights.map((post) => post.slug));

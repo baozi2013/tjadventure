@@ -88,7 +88,7 @@ export default async function AboutPage({ params }: PageProps) {
             <div className="relative mt-4 h-72 w-full overflow-hidden rounded-2xl border border-black/10 sm:h-96 dark:border-white/10">
               <Image
                 src="/about/william.png"
-                alt="William"
+                alt={t("williamAlt")}
                 fill
                 className="object-cover"
                 sizes="(max-width: 640px) 100vw, 768px"
@@ -101,7 +101,7 @@ export default async function AboutPage({ params }: PageProps) {
             <div className="relative mt-4 h-72 w-full overflow-hidden rounded-2xl border border-black/10 sm:h-96 dark:border-white/10">
               <Image
                 src="/about/george.png"
-                alt="George"
+                alt={t("georgeAlt")}
                 fill
                 className="object-cover"
                 sizes="(max-width: 640px) 100vw, 768px"

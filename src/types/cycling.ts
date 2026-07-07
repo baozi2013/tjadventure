@@ -1,5 +1,6 @@
 import type { MapRouteTrack } from "./maps";
 import type { Locale } from "@/i18n/routing";
+import type { ContentHeading } from "@/lib/content-frontmatter";
 
 export const CYCLING_RIDE_TYPES = ["road", "gravel", "event"] as const;
 
@@ -75,11 +76,7 @@ export type CyclingSummary = CyclingFrontmatter & {
   slug: string;
 };
 
-export type CyclingHeading = {
-  level: 2 | 3;
-  text: string;
-  id: string;
-};
+export type CyclingHeading = ContentHeading;
 
 export type CyclingEntry = CyclingSummary & {
   content: string;

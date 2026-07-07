@@ -2,8 +2,29 @@ import fs from "node:fs";
 import path from "node:path";
 import matter from "gray-matter";
 import { getSlugFallbackLocations, localizeTripLocations } from "@/data/trip-locations";
-import { isSupportedLocale, routing, type Locale } from "@/i18n/routing";
+import { routing, type Locale } from "@/i18n/routing";
 import { DEFAULT_CONTENT_LOCALE, getLocalizedContentPath } from "@/lib/content-locale";
+import { readFileWithMtimeCache } from "@/lib/content-cache";
+import {
+  extractHeadings as extractContentHeadings,
+  extractPlainText,
+  isObjectRecord,
+  makeFrontmatterFail,
+  normalizeText,
+  parseLatLng,
+  readLocale,
+  readOptionalLocale,
+  readOptionalStringArray,
+  readRequiredText,
+  sortByDateKey,
+  validateAssetPath,
+  validateCalendarDate,
+  validateContentLocale,
+  validateTranslationKey,
+  type ContentHeading,
+  type Fail,
+  type RawFrontmatter,
+} from "@/lib/content-frontmatter";
 import type { SearchIndexEntry } from "@/types/search";
 import type { TripLocation } from "@/types/posts";
 
@@ -11,7 +32,6 @@ const POSTS_DIR = path.join(process.cwd(), "content/posts");
 const POSTS_EN_DIR = path.join(process.cwd(), "content/en/posts");
 const CATEGORY_FORMAT = /^.+\s·\s.+$/;
 const READ_TIME_FORMAT = /^[1-9]\d*\s+min$/;
-const TRANSLATION_KEY_FORMAT = /^[a-z0-9][a-z0-9-]*$/;
 
 export type PostFrontmatter = {
   title: string;
@@ -25,6 +45,8 @@ export type PostFrontmatter = {
   coverImage: string; // Cloudinary URL
   tags?: string[];
   locations?: TripLocation[];
+  featured?: boolean;
+  featuredOrder?: number;
 };
 
 export type PostSummary = PostFrontmatter & {
@@ -40,13 +62,8 @@ export type RelatedPost = PostSummary & {
   relation: "same-category" | "same-region" | "shared-tags" | "recent";
 };
 
-export type Heading = {
-  level: 2 | 3;
-  text: string;
-  id: string;
-};
+export type Heading = ContentHeading;
 
-type RawFrontmatter = Record<string, unknown>;
 type ParsedPost = {
   slug: string;
   frontmatter: PostFrontmatter;
@@ -55,253 +72,108 @@ type ParsedPost = {
   locations: TripLocation[];
 };
 
-function slugify(text: string) {
-  return text
-    .trim()
-    .toLowerCase()
-    .replace(/[\s/]+/g, "-")
-    .replace(/[^a-z0-9\u4e00-\u9fa5\-]/g, "")
-    .replace(/-+/g, "-");
-}
-
-function isObjectRecord(value: unknown): value is RawFrontmatter {
-  return typeof value === "object" && value !== null && !Array.isArray(value);
-}
-
-function failFrontmatter(filePath: string, message: string): never {
-  throw new Error(`[posts] Invalid frontmatter in "${filePath}": ${message}`);
-}
-
-function readRequiredText(frontmatter: RawFrontmatter, key: string, filePath: string): string {
-  const value = frontmatter[key];
-  if (typeof value !== "string" || value.trim().length === 0) {
-    failFrontmatter(filePath, `"${key}" must be a non-empty string.`);
-  }
-
-  return value.trim();
-}
-
-function readLocale(frontmatter: RawFrontmatter, key: "locale" | "canonicalLocale", filePath: string): Locale {
-  const value = readRequiredText(frontmatter, key, filePath);
-  if (!isSupportedLocale(value)) {
-    failFrontmatter(filePath, `"${key}" must be one of: ${routing.locales.join(", ")}.`);
-  }
-
-  return value;
-}
-
-function readOptionalLocale(
-  frontmatter: RawFrontmatter,
-  key: "canonicalLocale",
-  filePath: string,
-): Locale | undefined {
-  if (frontmatter[key] == null) return undefined;
-  return readLocale(frontmatter, key, filePath);
-}
-
-function validateContentLocale(locale: Locale, expectedLocale: Locale, filePath: string) {
-  if (locale !== expectedLocale) {
-    failFrontmatter(filePath, `"locale" must match its content directory (${expectedLocale}).`);
-  }
-
-  return locale;
-}
-
-function validateTranslationKey(rawTranslationKey: string, filePath: string): string {
-  if (!TRANSLATION_KEY_FORMAT.test(rawTranslationKey)) {
-    failFrontmatter(filePath, `"translationKey" must use lowercase letters, numbers, and hyphens.`);
-  }
-
-  return rawTranslationKey;
-}
-
-function validateDate(rawDate: string, filePath: string): string {
-  if (!/^\d{4}-\d{2}-\d{2}$/.test(rawDate)) {
-    failFrontmatter(filePath, `"date" must use YYYY-MM-DD format.`);
-  }
-
-  const [year, month, day] = rawDate.split("-").map((value) => Number.parseInt(value, 10));
-  const normalized = new Date(Date.UTC(year, month - 1, day));
-  if (
-    Number.isNaN(normalized.getTime()) ||
-    normalized.getUTCFullYear() !== year ||
-    normalized.getUTCMonth() + 1 !== month ||
-    normalized.getUTCDate() !== day
-  ) {
-    failFrontmatter(filePath, `"date" is not a valid calendar date.`);
-  }
-
-  return rawDate;
-}
-
-function validateCategory(rawCategory: string, filePath: string): string {
+function validateCategory(rawCategory: string, fail: Fail): string {
   if (!CATEGORY_FORMAT.test(rawCategory)) {
-    failFrontmatter(filePath, `"category" must follow "Region · Theme" format.`);
+    fail(`"category" must follow "Region · Theme" format.`);
   }
 
   return rawCategory;
 }
 
-function validateReadTime(rawReadTime: string, filePath: string): string {
+function validateReadTime(rawReadTime: string, fail: Fail): string {
   if (!READ_TIME_FORMAT.test(rawReadTime)) {
-    failFrontmatter(filePath, `"readTime" must follow "<number> min" format (for example, "8 min").`);
+    fail(`"readTime" must follow "<number> min" format (for example, "8 min").`);
   }
 
   return rawReadTime;
 }
 
-// Build-time validation checks that referenced public assets exist.
-// At runtime we only validate the path shape so route traces do not pull `public/` into server bundles.
-function validateLocalAssetPath(rawPath: string, fieldName: string, filePath: string): string {
-  if (!rawPath.startsWith("/")) {
-    failFrontmatter(filePath, `"${fieldName}" must start with "/" when using local assets.`);
-  }
-
-  if (rawPath.startsWith("//")) {
-    failFrontmatter(filePath, `"${fieldName}" must not use protocol-relative URLs.`);
-  }
-
-  if (rawPath.includes("..")) {
-    failFrontmatter(filePath, `"${fieldName}" must not contain ".." segments.`);
-  }
-
-  return rawPath;
-}
-
-function validateCoverImage(rawCoverImage: string, filePath: string): string {
-  if (rawCoverImage.startsWith("/")) {
-    return validateLocalAssetPath(rawCoverImage, "coverImage", filePath);
-  }
-
-  if (/^https?:\/\//.test(rawCoverImage)) {
-    return rawCoverImage;
-  }
-
-  failFrontmatter(filePath, `"coverImage" must be an absolute path (starting with "/") or an http(s) URL.`);
-}
-
-function validateLocationImage(rawImage: string, filePath: string, index: number): string {
-  if (rawImage.startsWith("/")) {
-    return validateLocalAssetPath(rawImage, `locations[${index}].image`, filePath);
-  }
-
-  if (/^https?:\/\//.test(rawImage)) {
-    return rawImage;
-  }
-
-  failFrontmatter(
-    filePath,
-    `"locations[${index}].image" must be an absolute path (starting with "/") or an http(s) URL.`,
-  );
-}
-
-function readOptionalTags(frontmatter: RawFrontmatter, filePath: string): string[] | undefined {
-  const value = frontmatter.tags;
-  if (value == null) return undefined;
-
-  if (!Array.isArray(value)) {
-    failFrontmatter(filePath, `"tags" must be an array of strings when provided.`);
-  }
-
-  const tags = value.map((tag) => {
-    if (typeof tag !== "string" || tag.trim().length === 0) {
-      failFrontmatter(filePath, `"tags" entries must be non-empty strings.`);
-    }
-    return tag.trim();
-  });
-
-  return tags;
-}
-
-function readLocationNumber(
-  location: RawFrontmatter,
-  key: "lat" | "lng",
-  filePath: string,
-  index: number,
-): number {
-  const value = location[key];
-  const parsed =
-    typeof value === "number"
-      ? value
-      : typeof value === "string"
-        ? Number.parseFloat(value)
-        : Number.NaN;
-
-  if (!Number.isFinite(parsed)) {
-    failFrontmatter(filePath, `"locations[${index}].${key}" must be a valid number.`);
-  }
-
-  if (key === "lat" && (parsed < -90 || parsed > 90)) {
-    failFrontmatter(filePath, `"locations[${index}].lat" must be in range [-90, 90].`);
-  }
-
-  if (key === "lng" && (parsed < -180 || parsed > 180)) {
-    failFrontmatter(filePath, `"locations[${index}].lng" must be in range [-180, 180].`);
-  }
-
-  return parsed;
-}
-
-function readOptionalLocations(frontmatter: RawFrontmatter, filePath: string): TripLocation[] | undefined {
+function readOptionalLocations(frontmatter: RawFrontmatter, fail: Fail): TripLocation[] | undefined {
   const value = frontmatter.locations;
   if (value == null) return undefined;
 
   if (!Array.isArray(value)) {
-    failFrontmatter(filePath, `"locations" must be an array when provided.`);
+    fail(`"locations" must be an array when provided.`);
   }
 
   const locations = value.map((item, index) => {
     if (!isObjectRecord(item)) {
-      failFrontmatter(filePath, `"locations[${index}]" must be an object.`);
+      fail(`"locations[${index}]" must be an object.`);
     }
 
     const name = item.name;
     if (typeof name !== "string" || name.trim().length === 0) {
-      failFrontmatter(filePath, `"locations[${index}].name" must be a non-empty string.`);
+      fail(`"locations[${index}].name" must be a non-empty string.`);
     }
 
     const note = item.note;
     if (note != null && (typeof note !== "string" || note.trim().length === 0)) {
-      failFrontmatter(filePath, `"locations[${index}].note" must be a non-empty string when provided.`);
+      fail(`"locations[${index}].note" must be a non-empty string when provided.`);
     }
 
     const image = item.image;
     if (image != null && (typeof image !== "string" || image.trim().length === 0)) {
-      failFrontmatter(filePath, `"locations[${index}].image" must be a non-empty string when provided.`);
+      fail(`"locations[${index}].image" must be a non-empty string when provided.`);
     }
 
     return {
       name: name.trim(),
-      lat: readLocationNumber(item, "lat", filePath, index),
-      lng: readLocationNumber(item, "lng", filePath, index),
+      lat: parseLatLng(item.lat, "lat", `locations[${index}].lat`, fail),
+      lng: parseLatLng(item.lng, "lng", `locations[${index}].lng`, fail),
       note: typeof note === "string" ? note.trim() : undefined,
-      image: typeof image === "string" ? validateLocationImage(image.trim(), filePath, index) : undefined,
+      image:
+        typeof image === "string" ? validateAssetPath(image.trim(), `locations[${index}].image`, fail) : undefined,
     };
   });
 
   if (locations.length === 0) {
-    failFrontmatter(filePath, `"locations" cannot be an empty array.`);
+    fail(`"locations" cannot be an empty array.`);
   }
 
   return locations;
 }
 
-function parsePostFrontmatter(data: unknown, filePath: string, expectedLocale: Locale): PostFrontmatter {
-  if (!isObjectRecord(data)) {
-    failFrontmatter(filePath, "frontmatter must be an object.");
+function readOptionalBoolean(frontmatter: RawFrontmatter, key: string, fail: Fail): boolean | undefined {
+  const value = frontmatter[key];
+  if (value == null) return undefined;
+
+  if (typeof value !== "boolean") {
+    fail(`"${key}" must be a boolean when provided.`);
   }
 
-  const title = readRequiredText(data, "title", filePath);
-  const excerpt = readRequiredText(data, "excerpt", filePath);
-  const locale = validateContentLocale(readLocale(data, "locale", filePath), expectedLocale, filePath);
-  const translationKey = validateTranslationKey(readRequiredText(data, "translationKey", filePath), filePath);
-  const canonicalLocale = readOptionalLocale(data, "canonicalLocale", filePath);
-  const date = validateDate(readRequiredText(data, "date", filePath), filePath);
-  const category = validateCategory(readRequiredText(data, "category", filePath), filePath);
-  const readTime = validateReadTime(readRequiredText(data, "readTime", filePath), filePath);
-  const coverImage = validateCoverImage(readRequiredText(data, "coverImage", filePath), filePath);
-  const tags = readOptionalTags(data, filePath);
-  const locations = readOptionalLocations(data, filePath);
+  return value;
+}
+
+function readOptionalInteger(frontmatter: RawFrontmatter, key: string, fail: Fail): number | undefined {
+  const value = frontmatter[key];
+  if (value == null) return undefined;
+
+  if (typeof value !== "number" || !Number.isInteger(value)) {
+    fail(`"${key}" must be an integer when provided.`);
+  }
+
+  return value;
+}
+
+export function parsePostFrontmatter(data: unknown, filePath: string, expectedLocale: Locale): PostFrontmatter {
+  const fail: Fail = makeFrontmatterFail("posts", filePath);
+  if (!isObjectRecord(data)) {
+    fail("frontmatter must be an object.");
+  }
+
+  const title = readRequiredText(data, "title", fail);
+  const excerpt = readRequiredText(data, "excerpt", fail);
+  const locale = validateContentLocale(readLocale(data, "locale", fail), expectedLocale, fail);
+  const translationKey = validateTranslationKey(readRequiredText(data, "translationKey", fail), fail);
+  const canonicalLocale = readOptionalLocale(data, "canonicalLocale", fail);
+  const date = validateCalendarDate(readRequiredText(data, "date", fail), "date", fail);
+  const category = validateCategory(readRequiredText(data, "category", fail), fail);
+  const readTime = validateReadTime(readRequiredText(data, "readTime", fail), fail);
+  const coverImage = validateAssetPath(readRequiredText(data, "coverImage", fail), "coverImage", fail);
+  const tags = readOptionalStringArray(data, "tags", fail);
+  const locations = readOptionalLocations(data, fail);
+  const featured = readOptionalBoolean(data, "featured", fail);
+  const featuredOrder = readOptionalInteger(data, "featuredOrder", fail);
 
   return {
     title,
@@ -315,6 +187,8 @@ function parsePostFrontmatter(data: unknown, filePath: string, expectedLocale: L
     coverImage,
     tags,
     locations,
+    featured,
+    featuredOrder,
   };
 }
 
@@ -340,44 +214,22 @@ function getPostPath(fileName: string, locale: Locale) {
 }
 
 function readParsedPost(fullPath: string, slug: string, locale: Locale): ParsedPost {
-  const raw = fs.readFileSync(fullPath, "utf8");
-  const { data, content } = matter(raw);
-  const frontmatter = parsePostFrontmatter(data, fullPath, locale);
+  return readFileWithMtimeCache(fullPath, () => {
+    const raw = fs.readFileSync(fullPath, "utf8");
+    const { data, content } = matter(raw);
+    const frontmatter = parsePostFrontmatter(data, fullPath, locale);
 
-  return {
-    slug,
-    frontmatter,
-    content,
-    headings: extractHeadings(content),
-    locations: resolvePostLocations(slug, frontmatter, locale),
-  };
+    return {
+      slug,
+      frontmatter,
+      content,
+      headings: extractContentHeadings(content),
+      locations: resolvePostLocations(slug, frontmatter, locale),
+    };
+  });
 }
 
-function sortByDate<T extends { date: string }>(a: T, b: T) {
-  return +new Date(b.date) - +new Date(a.date);
-}
-
-function normalizeText(value: string) {
-  return value.replace(/\s+/g, " ").trim();
-}
-
-function extractPlainText(content: string) {
-  return normalizeText(
-    content
-      .replace(/^import\s.+$/gm, " ")
-      .replace(/^export\s.+$/gm, " ")
-      .replace(/```[\s\S]*?```/g, " ")
-      .replace(/!\[([^\]]*)\]\(([^)]+)\)/g, " $1 ")
-      .replace(/\[([^\]]+)\]\(([^)]+)\)/g, " $1 ")
-      .replace(/`([^`]+)`/g, " $1 ")
-      .replace(/<[^>]+>/g, " ")
-      .replace(/^\s{0,3}#{1,6}\s+/gm, "")
-      .replace(/^\s*[-*+]\s+/gm, "")
-      .replace(/^\s*\d+\.\s+/gm, "")
-      .replace(/^\s*>\s?/gm, "")
-      .replace(/[*_~|]/g, " "),
-  );
-}
+const sortByDate = sortByDateKey<{ date: string }>((item) => item.date);
 
 export function getAllPosts(locale: Locale = DEFAULT_CONTENT_LOCALE): PostSummary[] {
   return getPostFilenames(locale)
@@ -536,22 +388,4 @@ export function getPostLanguageAlternates(translationKey: string): Partial<Recor
         .map((post) => [locale, `/posts/${post.slug}`] as const),
     ),
   ) as Partial<Record<Locale, string>>;
-}
-
-function extractHeadings(content: string): Heading[] {
-  const lines = content.split("\n");
-  const headings: Heading[] = [];
-
-  for (const line of lines) {
-    if (line.startsWith("## ")) {
-      const text = line.replace("## ", "").trim();
-      headings.push({ level: 2, text, id: slugify(text) });
-    }
-    if (line.startsWith("### ")) {
-      const text = line.replace("### ", "").trim();
-      headings.push({ level: 3, text, id: slugify(text) });
-    }
-  }
-
-  return headings;
 }

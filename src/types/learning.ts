@@ -1,4 +1,5 @@
 import type { Locale } from "@/i18n/routing";
+import type { ContentHeading } from "@/lib/content-frontmatter";
 
 export type LearningFrontmatter = {
   title: string;
@@ -15,11 +16,7 @@ export type LearningSummary = LearningFrontmatter & {
   slug: string;
 };
 
-export type LearningHeading = {
-  level: 2 | 3;
-  text: string;
-  id: string;
-};
+export type LearningHeading = ContentHeading;
 
 export type LearningEntry = LearningSummary & {
   content: string;

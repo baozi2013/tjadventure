@@ -1,5 +1,5 @@
 import { createRssResponse } from "@/lib/rss";
 
 export function GET() {
-  return createRssResponse("zh-CN");
+  return createRssResponse("en-US");
 }

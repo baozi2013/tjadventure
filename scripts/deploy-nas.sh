@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-NAS_USER="${NAS_USER:-tianheng}"
-NAS_HOST="${NAS_HOST:-192.168.68.88}"
+NAS_USER="${NAS_USER:-}"
+NAS_HOST="${NAS_HOST:-}"
 NAS_PORT="${NAS_PORT:-22}"
 REMOTE_DIR="${REMOTE_DIR:-~/projects/tjadventure}"
 COMPOSE_FILE="${COMPOSE_FILE:-docker-compose.nas.yml}"
@@ -27,8 +27,11 @@ Options:
   --remote-port <port>    NAS app port (default: 3000)
   -h, --help              Show this help
 
-Environment overrides:
-  NAS_USER, NAS_HOST, NAS_PORT, REMOTE_DIR, COMPOSE_FILE, BRANCH, SITE_URL
+Required environment variables (no defaults):
+  NAS_USER, NAS_HOST
+
+Optional environment overrides:
+  NAS_PORT, REMOTE_DIR, COMPOSE_FILE, BRANCH, SITE_URL
 EOF
 }
 
@@ -61,6 +64,13 @@ while [[ $# -gt 0 ]]; do
       ;;
   esac
 done
+
+if [[ -z "${NAS_USER}" || -z "${NAS_HOST}" ]]; then
+  echo "NAS_USER and NAS_HOST must be set (no defaults are baked in). Example:" >&2
+  echo "  NAS_USER=youruser NAS_HOST=your.nas.host ./scripts/deploy-nas.sh" >&2
+  echo "Or export them in your shell profile / a local untracked .env file first." >&2
+  exit 1
+fi
 
 SITE_URL="${SITE_URL:-http://${NAS_HOST}:${REMOTE_APP_PORT}}"
 
