@@ -1,5 +1,6 @@
 import type { MetadataRoute } from "next";
 import { getAllCyclingEntries } from "@/lib/cycling";
+import { getAllLearningEntries } from "@/lib/learning";
 import { getAllPosts } from "@/lib/posts";
 import { getAbsoluteUrl } from "@/lib/metadata";
 import { getLocalizedPathname, routing, type Locale } from "@/i18n/routing";
@@ -84,6 +85,12 @@ export default function sitemap(): MetadataRoute.Sitemap {
       priority: 0.8,
     }),
     ...createLocalizedRoutes({
+      pathname: "/learning",
+      lastModified: new Date(),
+      changeFrequency: "weekly",
+      priority: 0.7,
+    }),
+    ...createLocalizedRoutes({
       pathname: "/about",
       lastModified: new Date(),
       changeFrequency: "monthly",
@@ -143,5 +150,28 @@ export default function sitemap(): MetadataRoute.Sitemap {
     },
   );
 
-  return [...staticRoutes, ...postRoutes, ...cyclingRoutes];
+  const localizedLearningEntries = routing.locales.flatMap((locale) =>
+    getAllLearningEntries(locale).map((entry) => ({
+      locale,
+      translationKey: entry.translationKey,
+      entry,
+      pathname: `/learning/${entry.slug}`,
+    })),
+  );
+  const learningRoutes: MetadataRoute.Sitemap = Array.from(
+    groupByTranslationKey(localizedLearningEntries).values(),
+  ).flatMap((items) => {
+    const pathnames = items.map(({ locale, pathname }) => ({ locale, pathname }));
+    const alternates = getContentAlternates(pathnames);
+
+    return items.map(({ locale, pathname, entry }) => ({
+      url: getAbsoluteUrl(getLocalizedPathname(pathname, locale)),
+      lastModified: new Date(entry.date),
+      changeFrequency: "monthly",
+      priority: 0.6,
+      alternates,
+    }));
+  });
+
+  return [...staticRoutes, ...postRoutes, ...cyclingRoutes, ...learningRoutes];
 }

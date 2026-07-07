@@ -1,4 +1,5 @@
 import { getAllCyclingEntries } from "@/lib/cycling";
+import { getAllLearningEntries } from "@/lib/learning";
 import { getAllPosts } from "@/lib/posts";
 import { DEFAULT_DESCRIPTION, SITE_NAME, getAbsoluteUrl } from "@/lib/metadata";
 
@@ -14,6 +15,7 @@ function escapeXml(value: string) {
 export function GET() {
   const posts = getAllPosts();
   const cyclingEntries = getAllCyclingEntries();
+  const learningEntries = getAllLearningEntries();
   const siteUrl = getAbsoluteUrl("/");
   const rssUrl = getAbsoluteUrl("/rss.xml");
 
@@ -31,6 +33,13 @@ export function GET() {
       date: entry.rideDate,
       excerpt: entry.excerpt,
       category: `${entry.location.region} · Cycling`,
+    })),
+    ...learningEntries.map((entry) => ({
+      title: entry.title,
+      url: getAbsoluteUrl(`/learning/${entry.slug}`),
+      date: entry.date,
+      excerpt: entry.excerpt,
+      category: "Learning · Godot",
     })),
   ].sort((a, b) => +new Date(b.date) - +new Date(a.date));
 

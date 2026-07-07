@@ -7,6 +7,8 @@ const POSTS_DIR = path.join(ROOT_DIR, "content/posts");
 const POSTS_EN_DIR = path.join(ROOT_DIR, "content/en/posts");
 const CYCLING_DIR = path.join(ROOT_DIR, "content/cycling");
 const CYCLING_EN_DIR = path.join(ROOT_DIR, "content/en/cycling");
+const LEARNING_DIR = path.join(ROOT_DIR, "content/learning");
+const LEARNING_EN_DIR = path.join(ROOT_DIR, "content/en/learning");
 const PUBLIC_DIR = path.join(ROOT_DIR, "public");
 
 const SUPPORTED_LOCALES = new Set(["zh-CN", "en-US"]);
@@ -574,6 +576,43 @@ function validateCyclingFrontmatter(data, filePath, expectedLocale) {
   return errors;
 }
 
+function validateLearningFrontmatter(data, filePath, expectedLocale) {
+  const errors = [];
+
+  if (!isRecord(data)) {
+    return ["frontmatter must be an object."];
+  }
+
+  validateContentIdentity(data, expectedLocale, errors);
+  validateRequiredTextFields(data, ["title", "excerpt", "date"], errors);
+
+  if (errors.length > 0) {
+    return errors;
+  }
+
+  const date = data.date.trim();
+  if (!isValidDate(date)) {
+    errors.push(`"date" must be a valid calendar date in YYYY-MM-DD format.`);
+  }
+
+  if (data.coverImage != null) {
+    if (typeof data.coverImage !== "string" || data.coverImage.trim().length === 0) {
+      errors.push(`"coverImage" must be a non-empty string when provided.`);
+    } else {
+      const coverImage = data.coverImage.trim();
+      if (coverImage.startsWith("/")) {
+        validateLocalPublicAsset(coverImage, "coverImage", filePath, errors);
+      } else if (!HTTP_FORMAT.test(coverImage)) {
+        errors.push(`"coverImage" must be a local "/..." path or http(s) URL.`);
+      }
+    }
+  }
+
+  validateOptionalStringArray(data.tags, "tags", errors, { unique: true });
+
+  return errors;
+}
+
 function listContentFiles(directory) {
   if (!fs.existsSync(directory)) {
     return [];
@@ -686,8 +725,12 @@ function main() {
     ...toContentRecords(listContentFiles(CYCLING_DIR), "zh-CN"),
     ...toContentRecords(listContentFiles(CYCLING_EN_DIR), "en-US"),
   ];
+  const learningFiles = [
+    ...toContentRecords(listContentFiles(LEARNING_DIR), "zh-CN"),
+    ...toContentRecords(listContentFiles(LEARNING_EN_DIR), "en-US"),
+  ];
 
-  if (postFiles.length === 0 && cyclingFiles.length === 0) {
+  if (postFiles.length === 0 && cyclingFiles.length === 0 && learningFiles.length === 0) {
     console.log("[validate-posts] No content files found. Skipping.");
     return;
   }
@@ -695,6 +738,7 @@ function main() {
   const errorsByFile = [
     ...validateFiles(postFiles, validateFrontmatter),
     ...validateFiles(cyclingFiles, validateCyclingFrontmatter),
+    ...validateFiles(learningFiles, validateLearningFrontmatter),
   ];
 
   if (errorsByFile.length > 0) {
@@ -708,7 +752,9 @@ function main() {
     process.exit(1);
   }
 
-  console.log(`[validate-posts] OK (${postFiles.length} posts, ${cyclingFiles.length} cycling entries validated).`);
+  console.log(
+    `[validate-posts] OK (${postFiles.length} posts, ${cyclingFiles.length} cycling entries, ${learningFiles.length} learning entries validated).`,
+  );
 }
 
 main();

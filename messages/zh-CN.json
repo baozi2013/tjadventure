@@ -5,6 +5,7 @@
     "gears": "装备",
     "trips": "全部游记",
     "cycling": "骑行",
+    "learning": "学习记录",
     "search": "搜索",
     "languageLabel": "语言",
     "zh": "中文",
@@ -86,6 +87,31 @@
     "eventSummary": "有组织的骑行、展会和适合全家参与的骑行日。",
     "gravelLabel": "Gravel",
     "gravelSummary": "混合路面和土路路线笔记。"
+  },
+  "Learning": {
+    "metadataTitle": "学习记录",
+    "metadataDescription": "记录学习 Godot 引擎的实践过程——笔记、实验和踩过的坑。",
+    "collection": "学习记录",
+    "title": "Godot 学习之旅",
+    "intro": "记录学习 Godot 的过程：试过什么、踩过什么坑、最后弄明白了什么，大致按时间顺序排列。",
+    "empty": "还没有学习记录。"
+  },
+  "LearningDetail": {
+    "notFoundTitle": "记录未找到",
+    "notFoundDescription": "没有找到请求的学习记录。",
+    "home": "首页",
+    "learning": "学习记录",
+    "eyebrow": "Godot 学习记录",
+    "continueEyebrow": "Continue Reading",
+    "continueTitle": "上一篇 / 下一篇",
+    "allEntries": "查看全部记录",
+    "previous": "上一篇",
+    "next": "下一篇",
+    "firstEntry": "已经是第一篇了。",
+    "lastEntry": "已经是最后一篇了。",
+    "snapshot": "记录概览",
+    "published": "发布时间",
+    "contents": "目录"
   },
   "Search": {
     "metadataTitle": "搜索游记和骑行",

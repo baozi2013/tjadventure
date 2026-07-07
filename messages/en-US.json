@@ -5,6 +5,7 @@
     "gears": "Gear",
     "trips": "Trips",
     "cycling": "Cycling",
+    "learning": "Learning",
     "search": "Search",
     "languageLabel": "Language",
     "zh": "Chinese",
@@ -86,6 +87,31 @@
     "eventSummary": "Organized rides, expos, and family-friendly cycling days.",
     "gravelLabel": "Gravel",
     "gravelSummary": "Mixed-surface rides and dirt-road route notes."
+  },
+  "Learning": {
+    "metadataTitle": "Learning Journal",
+    "metadataDescription": "A learning journal tracking hands-on progress with the Godot engine — notes, experiments, and lessons learned.",
+    "collection": "Learning Journal",
+    "title": "Godot Learning Journey",
+    "intro": "Notes from learning Godot: what I tried, what broke, and what finally clicked, in roughly chronological order.",
+    "empty": "No learning entries yet."
+  },
+  "LearningDetail": {
+    "notFoundTitle": "Entry Not Found",
+    "notFoundDescription": "The requested learning journal entry could not be found.",
+    "home": "Home",
+    "learning": "Learning",
+    "eyebrow": "Godot Learning Journal",
+    "continueEyebrow": "Continue Reading",
+    "continueTitle": "Previous / Next",
+    "allEntries": "View all entries",
+    "previous": "Previous",
+    "next": "Next",
+    "firstEntry": "This is the first entry.",
+    "lastEntry": "This is the last entry.",
+    "snapshot": "Entry Snapshot",
+    "published": "Published",
+    "contents": "Contents"
   },
   "Search": {
     "metadataTitle": "Search Stories and Rides",

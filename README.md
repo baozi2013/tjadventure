@@ -57,6 +57,7 @@ referenced assets before writing.
 - `docs`: Architecture notes and implementation decision records, including the i18n evaluation.
 - `content/posts`: Travel story MDX files.
 - `content/cycling`: Cycling entry MDX files.
+- `content/learning`: Godot learning journal MDX files.
 - `public`: Local image and branding assets.
 - `scripts`: Content validation, Strava draft import, and NAS deployment scripts.
 
@@ -85,6 +86,17 @@ Cycling rides live in `content/cycling/*.mdx` as a separate collection from trav
 - `coverImage` and optional `images`: local `/public` assets or http(s) URLs
 
 Run `npm run validate:posts` before publishing content. It validates both travel posts and cycling entries.
+
+### Learning journal entries
+
+The Godot learning journey lives in `content/learning/*.mdx` (with `content/en/learning/*.mdx` for English) as its own collection, separate from travel posts and cycling entries. Use `content/learning/_template.mdx` for the required frontmatter shape:
+
+- `title`, `excerpt`, `date` (`YYYY-MM-DD`)
+- `locale`, `translationKey`, optional `canonicalLocale` (same rules as travel posts)
+- `coverImage`: optional local `/public` asset or http(s) URL; falls back to `/learning/cover-placeholder.jpg` when omitted
+- `tags`: optional array of strings
+
+Entries appear at `/learning`, and are included in the site search index, sitemap, and RSS feed. Run `npm run validate:posts` before publishing; it validates learning entries alongside travel posts and cycling entries.
 
 ### Import a Strava ride draft
 
