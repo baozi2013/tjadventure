@@ -142,10 +142,10 @@ NAS_DIR_RAW="$1"
 COMPOSE_FILE="$2"
 
 case "${NAS_DIR_RAW}" in
-  ~/*)
-    NAS_DIR="${HOME}/${NAS_DIR_RAW#~/}"
+  "~"/*)
+    NAS_DIR="${HOME}/${NAS_DIR_RAW#\~/}"
     ;;
-  \$HOME/*)
+  "\$HOME"/*)
     NAS_DIR="${HOME}/${NAS_DIR_RAW#\$HOME/}"
     ;;
   *)
