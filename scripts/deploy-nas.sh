@@ -76,13 +76,14 @@ SITE_URL="${SITE_URL:-http://${NAS_HOST}:${REMOTE_APP_PORT}}"
 
 echo "Deploying to ${NAS_USER}@${NAS_HOST}:${REMOTE_DIR} (branch: ${BRANCH}, site URL: ${SITE_URL})..."
 
-ssh -p "${NAS_PORT}" "${NAS_USER}@${NAS_HOST}" "bash -s -- '${REMOTE_DIR}' '${BRANCH}' '${COMPOSE_FILE}' '${SITE_URL}'" <<'REMOTE_SCRIPT'
+ssh -p "${NAS_PORT}" "${NAS_USER}@${NAS_HOST}" "bash -s -- '${REMOTE_DIR}' '${BRANCH}' '${COMPOSE_FILE}' '${SITE_URL}' '${REMOTE_APP_PORT}'" <<'REMOTE_SCRIPT'
 set -euo pipefail
 
 REMOTE_DIR_RAW="${1}"
 BRANCH="${2}"
 COMPOSE_FILE="${3}"
 SITE_URL="${4}"
+REMOTE_APP_PORT="${5}"
 
 case "${REMOTE_DIR_RAW}" in
   "~/"*)
@@ -101,6 +102,7 @@ git fetch origin "${BRANCH}"
 git checkout "${BRANCH}"
 git pull --ff-only origin "${BRANCH}"
 export SITE_URL
+export REMOTE_APP_PORT
 
 if docker compose version >/dev/null 2>&1; then
   COMPOSE_BIN="docker compose"
