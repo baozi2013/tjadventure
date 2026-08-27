@@ -65,13 +65,15 @@ export function SearchExperience() {
   const urlQuery = searchParams.get("q") ?? "";
 
   const [query, setQuery] = useState(urlQuery);
+  const [syncedUrlQuery, setSyncedUrlQuery] = useState(urlQuery);
   const [data, setData] = useState<SearchIndexResponse | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
-  useEffect(() => {
+  if (urlQuery !== syncedUrlQuery) {
+    setSyncedUrlQuery(urlQuery);
     setQuery(urlQuery);
-  }, [urlQuery]);
+  }
 
   useEffect(() => {
     let isCancelled = false;
