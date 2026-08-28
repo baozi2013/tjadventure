@@ -4,8 +4,11 @@
     "about": "关于我们",
     "gears": "装备",
     "trips": "全部游记",
+    "map": "地图",
     "cycling": "骑行",
     "learning": "学习记录",
+    "tags": "标签",
+    "stats": "数据",
     "search": "搜索",
     "languageLabel": "语言",
     "zh": "中文",
@@ -240,5 +243,46 @@
     "road": "Road",
     "event": "Event",
     "gravel": "Gravel"
+  },
+  "Map": {
+    "metadataTitle": "全部行程地图",
+    "metadataDescription": "在一张地图上查看 TJ Adventure 去过的所有地方，点位可直接跳转到对应游记或骑行记录。",
+    "title": "全部行程地图",
+    "intro": "地图上标出了 {count} 个地点，点击图钉查看对应的游记或骑行记录。",
+    "empty": "还没有带坐标的行程。",
+    "loading": "地图加载中...",
+    "legendPosts": "游记",
+    "legendCycling": "骑行",
+    "viewDetails": "查看详情 →"
+  },
+  "Stats": {
+    "metadataTitle": "数据统计",
+    "metadataDescription": "TJ Adventure 的游记、骑行里程和爬升汇总数据。",
+    "title": "数据统计",
+    "intro": "从 {year} 年至今的旅行和骑行汇总。",
+    "introFallback": "旅行和骑行汇总数据。",
+    "totalPosts": "游记篇数",
+    "totalRegions": "去过的国家/地区",
+    "totalCyclingRides": "骑行次数",
+    "totalDistance": "累计骑行距离",
+    "totalElevation": "累计爬升",
+    "totalLearningEntries": "学习记录篇数",
+    "milesValue": "{value} 英里",
+    "feetValue": "{value} 英尺",
+    "regionsLabel": "去过的地方"
+  },
+  "Tags": {
+    "metadataTitle": "全部标签",
+    "metadataDescription": "按标签浏览 TJ Adventure 的游记、骑行记录和学习笔记。",
+    "title": "全部标签",
+    "intro": "共 {count} 个标签，点击标签查看相关内容。",
+    "empty": "还没有标签。",
+    "tagCount": "共 {count} 篇内容",
+    "tagMetadataTitle": "标签：{tag}",
+    "tagMetadataDescription": "浏览所有带有 \"{tag}\" 标签的游记、骑行记录和学习笔记。"
+  },
+  "Lightbox": {
+    "open": "查看大图",
+    "close": "关闭"
   }
 }

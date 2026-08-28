@@ -1,6 +1,4 @@
-import { getCyclingSearchIndex } from "@/lib/cycling";
-import { getLearningSearchIndex } from "@/lib/learning";
-import { getSearchIndex } from "@/lib/posts";
+import { getAllSearchEntries } from "@/lib/tags";
 import { isSupportedLocale, routing } from "@/i18n/routing";
 
 export const dynamic = "force-dynamic";
@@ -8,11 +6,7 @@ export const dynamic = "force-dynamic";
 export function GET(request: Request) {
   const requestedLocale = new URL(request.url).searchParams.get("locale") ?? routing.defaultLocale;
   const locale = isSupportedLocale(requestedLocale) ? requestedLocale : routing.defaultLocale;
-  const posts = [
-    ...getSearchIndex(locale),
-    ...getCyclingSearchIndex(locale),
-    ...getLearningSearchIndex(locale),
-  ].sort((a, b) => +new Date(b.date) - +new Date(a.date));
+  const posts = getAllSearchEntries(locale).sort((a, b) => +new Date(b.date) - +new Date(a.date));
 
   return Response.json(
     {

@@ -1,5 +1,6 @@
 import type { CSSProperties } from "react";
 import Image from "next/image";
+import { LightboxTrigger } from "@/components/lightbox-trigger";
 import { StravaActivity } from "@/components/strava-activity";
 
 const DEFAULT_CONTENT_IMAGE_SIZES = "(max-width: 768px) 100vw, (max-width: 1280px) 92vw, 1100px";
@@ -75,17 +76,19 @@ export function MdxImage({
     };
 
     return (
-      // eslint-disable-next-line @next/next/no-img-element
-      <img
-        src={src}
-        alt={alt}
-        width={parseDimension(width)}
-        height={parseDimension(height)}
-        className={className}
-        style={fallbackStyle}
-        loading={loading === "eager" ? "eager" : "lazy"}
-        decoding="async"
-      />
+      <LightboxTrigger src={src} alt={alt}>
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img
+          src={src}
+          alt={alt}
+          width={parseDimension(width)}
+          height={parseDimension(height)}
+          className={className}
+          style={fallbackStyle}
+          loading={loading === "eager" ? "eager" : "lazy"}
+          decoding="async"
+        />
+      </LightboxTrigger>
     );
   }
 
@@ -98,17 +101,19 @@ export function MdxImage({
   };
 
   return (
-    <Image
-      src={src}
-      alt={alt}
-      width={finalWidth}
-      height={finalHeight}
-      sizes={sizes ?? DEFAULT_CONTENT_IMAGE_SIZES}
-      className={className}
-      style={imageStyle}
-      quality={75}
-      loading={loading === "eager" ? "eager" : "lazy"}
-    />
+    <LightboxTrigger src={src} alt={alt}>
+      <Image
+        src={src}
+        alt={alt}
+        width={finalWidth}
+        height={finalHeight}
+        sizes={sizes ?? DEFAULT_CONTENT_IMAGE_SIZES}
+        className={className}
+        style={imageStyle}
+        quality={75}
+        loading={loading === "eager" ? "eager" : "lazy"}
+      />
+    </LightboxTrigger>
   );
 }
 

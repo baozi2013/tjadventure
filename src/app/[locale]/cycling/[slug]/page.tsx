@@ -245,12 +245,13 @@ export default async function CyclingDetailPage({ params }: Params) {
               {entry.tags && entry.tags.length > 0 ? (
                 <div className="mt-5 flex flex-wrap gap-2">
                   {entry.tags.map((tag) => (
-                    <span
+                    <Link
                       key={tag}
-                      className="rounded-full border border-black/10 px-3 py-1 text-xs text-neutral-600 dark:border-white/15 dark:text-neutral-300"
+                      href={`/tags/${encodeURIComponent(tag)}`}
+                      className="rounded-full border border-black/10 px-3 py-1 text-xs text-neutral-600 transition hover:bg-neutral-100 dark:border-white/15 dark:text-neutral-300 dark:hover:bg-neutral-900"
                     >
                       {tag}
-                    </span>
+                    </Link>
                   ))}
                 </div>
               ) : null}

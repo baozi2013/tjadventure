@@ -4,8 +4,11 @@
     "about": "About",
     "gears": "Gear",
     "trips": "Trips",
+    "map": "Map",
     "cycling": "Cycling",
     "learning": "Learning",
+    "tags": "Tags",
+    "stats": "Stats",
     "search": "Search",
     "languageLabel": "Language",
     "zh": "Chinese",
@@ -240,5 +243,46 @@
     "road": "Road",
     "event": "Event",
     "gravel": "Gravel"
+  },
+  "Map": {
+    "metadataTitle": "Trip Map",
+    "metadataDescription": "See everywhere TJ Adventure has traveled on one map. Tap a pin to jump to the matching post or ride.",
+    "title": "Trip Map",
+    "intro": "{count} places are pinned on the map. Tap a pin to open the matching post or ride.",
+    "empty": "No trips with coordinates yet.",
+    "loading": "Loading map...",
+    "legendPosts": "Posts",
+    "legendCycling": "Cycling",
+    "viewDetails": "View details →"
+  },
+  "Stats": {
+    "metadataTitle": "Stats",
+    "metadataDescription": "Totals for TJ Adventure's posts, cycling mileage, and elevation gain.",
+    "title": "Stats",
+    "intro": "Travel and cycling totals since {year}.",
+    "introFallback": "Travel and cycling totals.",
+    "totalPosts": "Posts",
+    "totalRegions": "Countries / Regions",
+    "totalCyclingRides": "Rides",
+    "totalDistance": "Total Distance",
+    "totalElevation": "Total Elevation Gain",
+    "totalLearningEntries": "Learning Entries",
+    "milesValue": "{value} mi",
+    "feetValue": "{value} ft",
+    "regionsLabel": "Places Visited"
+  },
+  "Tags": {
+    "metadataTitle": "All Tags",
+    "metadataDescription": "Browse TJ Adventure's posts, rides, and learning notes by tag.",
+    "title": "Tags",
+    "intro": "{count} tags. Tap one to see related content.",
+    "empty": "No tags yet.",
+    "tagCount": "{count} entries",
+    "tagMetadataTitle": "Tag: {tag}",
+    "tagMetadataDescription": "Browse all posts, rides, and learning notes tagged \"{tag}\"."
+  },
+  "Lightbox": {
+    "open": "View full image",
+    "close": "Close"
   }
 }

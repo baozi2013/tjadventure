@@ -91,6 +91,24 @@ export default function sitemap(): MetadataRoute.Sitemap {
       priority: 0.7,
     }),
     ...createLocalizedRoutes({
+      pathname: "/map",
+      lastModified: new Date(),
+      changeFrequency: "weekly",
+      priority: 0.6,
+    }),
+    ...createLocalizedRoutes({
+      pathname: "/tags",
+      lastModified: new Date(),
+      changeFrequency: "weekly",
+      priority: 0.4,
+    }),
+    ...createLocalizedRoutes({
+      pathname: "/stats",
+      lastModified: new Date(),
+      changeFrequency: "weekly",
+      priority: 0.4,
+    }),
+    ...createLocalizedRoutes({
       pathname: "/about",
       lastModified: new Date(),
       changeFrequency: "monthly",

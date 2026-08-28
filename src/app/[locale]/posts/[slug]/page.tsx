@@ -132,12 +132,13 @@ export default async function PostDetail({ params }: Params) {
             {post.frontmatter.tags && post.frontmatter.tags.length > 0 ? (
               <div className="mt-4 flex flex-wrap gap-2">
                 {post.frontmatter.tags.map((tag) => (
-                  <span
+                  <Link
                     key={tag}
-                    className="rounded-full border border-black/10 px-3 py-1 text-xs text-neutral-600 dark:border-white/15 dark:text-neutral-300"
+                    href={`/tags/${encodeURIComponent(tag)}`}
+                    className="rounded-full border border-black/10 px-3 py-1 text-xs text-neutral-600 transition hover:bg-neutral-100 dark:border-white/15 dark:text-neutral-300 dark:hover:bg-neutral-900"
                   >
                     {tag}
-                  </span>
+                  </Link>
                 ))}
               </div>
             ) : null}

@@ -16,3 +16,16 @@ export type TripLocation = {
   note?: string;
   image?: string;
 };
+
+export type WorldMapPinKind = "post" | "cycling";
+
+export type WorldMapPin = {
+  id: string;
+  kind: WorldMapPinKind;
+  lat: number;
+  lng: number;
+  title: string;
+  subtitle: string;
+  href: string;
+  image: string;
+};
