@@ -12,7 +12,9 @@
     "search": "搜索",
     "languageLabel": "语言",
     "zh": "中文",
-    "en": "EN"
+    "en": "EN",
+    "switchToDark": "切换到深色模式",
+    "switchToLight": "切换到浅色模式"
   },
   "Home": {
     "metadataTitle": "家庭旅行路线和故事",

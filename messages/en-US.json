@@ -12,7 +12,9 @@
     "search": "Search",
     "languageLabel": "Language",
     "zh": "Chinese",
-    "en": "EN"
+    "en": "EN",
+    "switchToDark": "Switch to dark mode",
+    "switchToLight": "Switch to light mode"
   },
   "Home": {
     "metadataTitle": "Family Travel Guides and Stories",

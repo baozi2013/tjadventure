@@ -2,6 +2,7 @@ import { Suspense } from "react";
 import { useTranslations } from "next-intl";
 import { Link } from "@/i18n/navigation";
 import { LanguageSwitcher } from "@/components/language-switcher";
+import { ThemeToggle } from "@/components/theme-toggle";
 
 const NAV_ITEMS = [
   { href: "/", labelKey: "home", key: "home" },
@@ -45,6 +46,7 @@ export function SiteNav({ current }: SiteNavProps) {
       <Suspense fallback={<LanguageSwitcherFallback zhLabel={t("zh")} enLabel={t("en")} />}>
         <LanguageSwitcher />
       </Suspense>
+      <ThemeToggle />
     </nav>
   );
 }
