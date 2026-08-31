@@ -1,27 +1,8 @@
 import { describe, expect, it } from "vitest";
-import { computeSiteStats, toFeet, toMiles } from "@/lib/stats";
+import { computeSiteStats } from "@/lib/stats";
+import { toMiles } from "@/lib/units";
 import { getAllCyclingEntries } from "@/lib/cycling";
 import { getAllPosts } from "@/lib/posts";
-
-describe("toMiles", () => {
-  it("returns the value unchanged when already in miles", () => {
-    expect(toMiles(50, "mi")).toBe(50);
-  });
-
-  it("converts kilometers to miles", () => {
-    expect(toMiles(100, "km")).toBeCloseTo(62.1371, 3);
-  });
-});
-
-describe("toFeet", () => {
-  it("returns the value unchanged when already in feet", () => {
-    expect(toFeet(4000, "ft")).toBe(4000);
-  });
-
-  it("converts meters to feet", () => {
-    expect(toFeet(1000, "m")).toBeCloseTo(3280.84, 1);
-  });
-});
 
 describe("computeSiteStats", () => {
   it("matches the real content counts", () => {

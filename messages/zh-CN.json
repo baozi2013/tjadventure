@@ -167,6 +167,15 @@
     "stops": "共 {count} 个点位",
     "track": "含路线轨迹"
   },
+  "ElevationChart": {
+    "title": "海拔剖面",
+    "loading": "海拔数据加载中...",
+    "summary": "爬升 {gain} ft · 最低 {min} ft · 最高 {max} ft",
+    "showTable": "查看数据表格",
+    "hideTable": "收起数据表格",
+    "distanceLabel": "距离",
+    "elevationLabel": "海拔"
+  },
   "StoryRideSwitch": {
     "currentPage": "当前页面",
     "eyebrow": "Trip Pair",

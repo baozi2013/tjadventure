@@ -167,6 +167,15 @@
     "stops": "{count} stops",
     "track": "Route track included"
   },
+  "ElevationChart": {
+    "title": "Elevation Profile",
+    "loading": "Loading elevation data...",
+    "summary": "{gain} ft gain · {min} ft min · {max} ft max",
+    "showTable": "View data table",
+    "hideTable": "Hide data table",
+    "distanceLabel": "Distance",
+    "elevationLabel": "Elevation"
+  },
   "StoryRideSwitch": {
     "currentPage": "Current page",
     "eyebrow": "Trip Pair",
