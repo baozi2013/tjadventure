@@ -1,6 +1,7 @@
 import Image from "next/image";
 import { Link } from "@/i18n/navigation";
 import type { PostSummary } from "@/lib/posts";
+import { splitByHighlightRanges, type HighlightRange } from "@/lib/text-highlight";
 
 export type PostCardPost = Pick<
   PostSummary,
@@ -13,9 +14,29 @@ type PostCardProps = {
   post: PostCardPost;
   priority?: boolean;
   size?: "default" | "feature";
+  titleHighlight?: HighlightRange[];
+  excerptHighlight?: HighlightRange[];
 };
 
-export function PostCard({ post, priority = false, size = "default" }: PostCardProps) {
+function HighlightedText({ text, ranges }: { text: string; ranges?: HighlightRange[] }) {
+  const segments = splitByHighlightRanges(text, ranges);
+
+  return (
+    <>
+      {segments.map((segment, index) =>
+        segment.highlighted ? (
+          <mark key={index} className="rounded bg-amber-200/70 px-0.5 text-inherit dark:bg-amber-500/30">
+            {segment.text}
+          </mark>
+        ) : (
+          <span key={index}>{segment.text}</span>
+        ),
+      )}
+    </>
+  );
+}
+
+export function PostCard({ post, priority = false, size = "default", titleHighlight, excerptHighlight }: PostCardProps) {
   const imageHeightClassName = size === "feature" ? "h-52" : "h-44";
 
   return (
@@ -36,10 +57,10 @@ export function PostCard({ post, priority = false, size = "default" }: PostCardP
       <div className="p-5">
         <p className="text-xs uppercase tracking-wider text-neutral-500">{post.category}</p>
         <h3 className="mt-2 text-lg font-semibold leading-snug group-hover:underline">
-          {post.title}
+          <HighlightedText text={post.title} ranges={titleHighlight} />
         </h3>
         <p className="mt-2 text-sm leading-6 text-neutral-600 dark:text-neutral-300">
-          {post.excerpt}
+          <HighlightedText text={post.excerpt} ranges={excerptHighlight} />
         </p>
         <p className="mt-3 text-xs text-neutral-500">
           {post.date} · {post.readTime}

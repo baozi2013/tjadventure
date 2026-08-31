@@ -5,11 +5,18 @@ import Fuse, { type IFuseOptions } from "fuse.js";
 import { useLocale, useTranslations } from "next-intl";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { PostCard } from "@/components/post-card";
+import type { HighlightRange } from "@/lib/text-highlight";
 import type { SearchIndexEntry } from "@/types/search";
 
 type SearchIndexResponse = {
   generatedAt: string;
   posts: SearchIndexEntry[];
+};
+
+type SearchResult = {
+  item: SearchIndexEntry;
+  titleRanges?: HighlightRange[];
+  excerptRanges?: HighlightRange[];
 };
 
 const DEFAULT_RESULTS_LIMIT = 9;
@@ -18,6 +25,7 @@ const EMPTY_POSTS: SearchIndexEntry[] = [];
 const FUSE_OPTIONS: IFuseOptions<SearchIndexEntry> = {
   threshold: 0.34,
   ignoreLocation: true,
+  includeMatches: true,
   keys: [
     { name: "title", weight: 0.34 },
     { name: "excerpt", weight: 0.2 },
@@ -124,9 +132,9 @@ export function SearchExperience() {
     return new Fuse(posts, FUSE_OPTIONS);
   }, [posts]);
 
-  const results = useMemo(() => {
+  const results = useMemo((): SearchResult[] => {
     if (!normalizedQuery) {
-      return posts.slice(0, DEFAULT_RESULTS_LIMIT);
+      return posts.slice(0, DEFAULT_RESULTS_LIMIT).map((item) => ({ item }));
     }
 
     if (!fuse) {
@@ -136,7 +144,13 @@ export function SearchExperience() {
     return fuse
       .search(normalizedQuery)
       .slice(0, SEARCH_RESULTS_LIMIT)
-      .map((result) => result.item);
+      .map((result) => ({
+        item: result.item,
+        titleRanges: result.matches?.find((match) => match.key === "title")?.indices as HighlightRange[] | undefined,
+        excerptRanges: result.matches?.find((match) => match.key === "excerpt")?.indices as
+          | HighlightRange[]
+          | undefined,
+      }));
   }, [fuse, normalizedQuery, posts]);
 
   const generatedAt = formatGeneratedAt(data?.generatedAt ?? "", locale);
@@ -280,8 +294,14 @@ export function SearchExperience() {
         </div>
       ) : (
         <div className="mt-5 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
-          {results.map((post, index) => (
-            <PostCard key={post.href} post={post} priority={index === 0} />
+          {results.map((result, index) => (
+            <PostCard
+              key={result.item.href}
+              post={result.item}
+              priority={index === 0}
+              titleHighlight={result.titleRanges}
+              excerptHighlight={result.excerptRanges}
+            />
           ))}
         </div>
       )}

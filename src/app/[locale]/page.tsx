@@ -3,8 +3,10 @@ import { getTranslations, setRequestLocale } from "next-intl/server";
 import { Link } from "@/i18n/navigation";
 import { getAllPosts } from "@/lib/posts";
 import { PostCard } from "@/components/post-card";
+import { RandomTripButton } from "@/components/random-trip-button";
 import { SiteNav } from "@/components/site-nav";
 import { createPageMetadata } from "@/lib/metadata";
+import { getRandomTripHrefs } from "@/lib/random-trip";
 import { resolveLocale, type LocaleParams } from "@/i18n/locale";
 
 type PageProps = {
@@ -37,6 +39,7 @@ export default async function Home({ params }: PageProps) {
   const highlightSlugs = new Set(seasonalHighlights.map((post) => post.slug));
   const recentPosts = allPosts.filter((post) => !highlightSlugs.has(post.slug)).slice(0, 9);
   const regions = Array.from(new Set(allPosts.map((post) => post.category.split(" · ")[0]))).slice(0, 4);
+  const randomTripHrefs = getRandomTripHrefs(locale);
 
   if (allPosts.length === 0) {
     return <main className="mx-auto max-w-4xl px-6 py-20">{t("empty")}</main>;
@@ -67,6 +70,10 @@ export default async function Home({ params }: PageProps) {
           >
             {t("secondaryCta")}
           </Link>
+          <RandomTripButton
+            hrefs={randomTripHrefs}
+            className="rounded-full border border-dashed border-black/20 px-4 py-2 text-sm font-medium text-neutral-700 transition hover:bg-neutral-100 dark:border-white/25 dark:text-neutral-200 dark:hover:bg-neutral-900"
+          />
         </div>
         <div className="mt-8 grid gap-3 border-t border-black/10 pt-6 text-sm text-neutral-600 dark:border-white/10 dark:text-neutral-300 sm:grid-cols-3">
           <div>

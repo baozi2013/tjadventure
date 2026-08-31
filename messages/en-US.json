@@ -37,6 +37,9 @@
     "viewAll": "View all",
     "moreSoon": "More trip stories are on the way."
   },
+  "RandomTrip": {
+    "cta": "Surprise me 🎲"
+  },
   "About": {
     "metadataTitle": "About Us",
     "metadataDescription": "Meet the TJ Adventure family behind the blog, the planning style, and the camera gear that documents each trip.",
