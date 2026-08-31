@@ -17,6 +17,7 @@ import { getPairedPostForCyclingSlug } from "@/lib/content-pairings";
 import { StoryRideSwitch } from "@/components/story-ride-switch";
 import { TripMap } from "@/components/trip-map";
 import { ElevationChart } from "@/components/elevation-chart";
+import { toFeet } from "@/lib/units";
 import { routing } from "@/i18n/routing";
 import { resolveLocale } from "@/i18n/locale";
 
@@ -320,7 +321,10 @@ export default async function CyclingDetailPage({ params }: Params) {
 
           {entry.route?.track ? (
             <div className="mt-6">
-              <ElevationChart track={entry.route.track} />
+              <ElevationChart
+                track={entry.route.track}
+                officialGainFeet={toFeet(entry.elevationGain.value, entry.elevationGain.unit)}
+              />
             </div>
           ) : null}
 

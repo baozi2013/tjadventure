@@ -8,6 +8,13 @@ import type { MapRouteTrack } from "@/types/maps";
 
 type ElevationChartProps = {
   track: MapRouteTrack;
+  /**
+   * Strava's own recorded elevation gain (already smoothed), in feet.
+   * Summing positive deltas across the raw/downsampled GPS trace is noisy
+   * and drifts from this authoritative number, so it's passed in rather
+   * than recomputed.
+   */
+  officialGainFeet: number;
 };
 
 type LoadState = "loading" | "ready" | "empty" | "error";
@@ -39,7 +46,7 @@ function buildYTicks(minElevation: number, maxElevation: number) {
   return { ticks, start, end };
 }
 
-export function ElevationChart({ track }: ElevationChartProps) {
+export function ElevationChart({ track, officialGainFeet }: ElevationChartProps) {
   const t = useTranslations("ElevationChart");
   const [state, setState] = useState<LoadState>("loading");
   const [profile, setProfile] = useState<ElevationProfilePoint[]>([]);
@@ -78,14 +85,9 @@ export function ElevationChart({ track }: ElevationChartProps) {
     const elevations = profile.map((point) => point.elevationFeet);
     const minElevation = Math.min(...elevations);
     const maxElevation = Math.max(...elevations);
-    let gain = 0;
-    for (let i = 1; i < profile.length; i += 1) {
-      const delta = profile[i].elevationFeet - profile[i - 1].elevationFeet;
-      if (delta > 0) gain += delta;
-    }
     const totalDistance = profile[profile.length - 1].distanceMiles;
 
-    return { minElevation, maxElevation, gain, totalDistance };
+    return { minElevation, maxElevation, totalDistance };
   }, [profile]);
 
   const geometry = useMemo(() => {
@@ -152,7 +154,7 @@ export function ElevationChart({ track }: ElevationChartProps) {
           <h2 className="text-base font-semibold sm:text-lg">{t("title")}</h2>
           <p className="text-sm text-neutral-600 dark:text-neutral-300">
             {t("summary", {
-              gain: Math.round(stats.gain).toLocaleString("en-US"),
+              gain: Math.round(officialGainFeet).toLocaleString("en-US"),
               min: Math.round(stats.minElevation).toLocaleString("en-US"),
               max: Math.round(stats.maxElevation).toLocaleString("en-US"),
             })}
@@ -172,7 +174,7 @@ export function ElevationChart({ track }: ElevationChartProps) {
         className="w-full touch-none"
         role="img"
         aria-label={t("summary", {
-          gain: Math.round(stats.gain).toLocaleString("en-US"),
+          gain: Math.round(officialGainFeet).toLocaleString("en-US"),
           min: Math.round(stats.minElevation).toLocaleString("en-US"),
           max: Math.round(stats.maxElevation).toLocaleString("en-US"),
         })}
