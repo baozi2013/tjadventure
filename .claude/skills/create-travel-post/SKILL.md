@@ -162,6 +162,18 @@ Rules:
 4. Keep deploy output concise and report final status.
 5. Pushing to the remote and deploying to the NAS are actions visible/affecting shared state — confirm with the user before running the script for real (not `--dry-run`), even if they asked for "publish" earlier in the conversation.
 
+## Social Card Export (Optional)
+
+Xiaohongshu (小红书) has no "share this link" mechanism external sites can hook into — it's a closed, image-note platform, and links pasted into a 小红书 post generally aren't clickable. The actual way to get a post's content onto 小红书 is to hand the user a ready-made image-card set they upload themselves as a note. This repo has the `guizang-social-card-skill` (a separate Claude Code skill, vendored locally at `.claude/skills/guizang-social-card-skill/`, gitignored — not project content) installed for exactly this.
+
+Rules:
+
+1. This step is optional and reactive. After a successful publish, it's fine to mention it's available (one line, not a hard sell). Only actually invoke `guizang-social-card-skill` when the user asks for it — never generate cards unprompted mid-draft.
+2. Feed it the post's own bilingual MDX (title, excerpt, section headings, body) and the already-selected local images under `public/trips/<slug>/` as source material. Don't fetch new stock images for a travel post — the user's own photos are the point.
+3. Default to that skill's Editorial visual style (travel/lifestyle/narrative content fits it better than Swiss, which that skill's own docs reserve for data/methodology/tooling content) unless the user asks otherwise.
+4. Cards render to that skill's own output location, not into `content/` or `public/` — they're a deliverable handed back to the user (e.g. via SendUserFile), not new tracked repo assets, unless the user explicitly asks to check the PNGs into the repo.
+5. If `guizang-social-card-skill` isn't installed or its Playwright browser isn't set up, say so plainly rather than attempting a manual approximation — don't hand-roll a poster in this skill's own tooling.
+
 ## Required Frontmatter
 
 Always include:
@@ -260,3 +272,4 @@ Use this skill for prompts like:
 3. "把这篇旧游记改成现在站点风格，并补齐 frontmatter。"
 4. "我给你一个 Google Photos/Immich sharable link，直接产出一篇游记。"
 5. "生成一篇中英文双语的旅行 post。"
+6. "把这篇游记做成小红书图文/社交卡片。"（见 Social Card Export 一节，调用 `guizang-social-card-skill`）

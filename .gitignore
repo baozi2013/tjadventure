@@ -46,3 +46,7 @@ next-env.d.ts
 
 # unpublished Strava OAuth review drafts
 /content/cycling/_drafts/
+
+# third-party Claude Code skills vendored locally via their own git checkout
+# (not project content; kept in sync with `git pull` inside the skill dir)
+/.claude/skills/guizang-social-card-skill/
