@@ -17,7 +17,11 @@ const nextConfig: NextConfig = {
     "**/*": ["./public/**"],
   },
   images: {
-    formats: ["image/avif", "image/webp"],
+    // Vercel Hobby bills image cache writes in 8KB units per variant, so
+    // serve a single format and cap widths at 1920 (the 2048/3840 defaults
+    // made retina screens and crawlers fetch very large copies).
+    formats: ["image/webp"],
+    deviceSizes: [640, 750, 828, 1080, 1200, 1920],
     minimumCacheTTL: 60 * 60 * 24 * 30,
     remotePatterns: [
       {
