@@ -23,6 +23,19 @@ const nextConfig: NextConfig = {
     formats: ["image/webp"],
     deviceSizes: [640, 750, 828, 1080, 1200, 1920],
     minimumCacheTTL: 60 * 60 * 24 * 30,
+    // Without this, /_next/image will optimize (and bill for) ANY path under
+    // public/ — including non-image assets like public/tracks/*.geojson —
+    // at any width/format a request asks for. Only these folders are ever
+    // actually passed through next/image — markdown images count too, since
+    // MdxImage uses next/image (e.g. content/gears/*.md → /gears/). Grep
+    // content/ and src/ for local image paths when adding a new folder.
+    localPatterns: [
+      { pathname: "/trips/**" },
+      { pathname: "/optimized/**" },
+      { pathname: "/about/**" },
+      { pathname: "/learning/**" },
+      { pathname: "/gears/**" },
+    ],
     remotePatterns: [
       {
         protocol: "https",
