@@ -621,6 +621,23 @@ function validateLearningFrontmatter(data, filePath, expectedLocale) {
   return errors;
 }
 
+// Draft markers like "[待补充：...]" or "[To update: ...]" render verbatim to readers.
+const BODY_PLACEHOLDER_FORMAT = /\[(?:待补充|待补|TODO|TBD|To update)\s*[:：]/i;
+// Body images pointing at original uploads instead of /optimized/ derivatives.
+const ORIGINAL_TRIP_IMAGE_FORMAT = /\]\(\/trips\//g;
+
+function validateBody(content, errors) {
+  for (const line of content.split("\n")) {
+    if (BODY_PLACEHOLDER_FORMAT.test(line)) {
+      errors.push(`Body contains an unfinished placeholder: "${line.trim().slice(0, 60)}".`);
+    }
+  }
+}
+
+function countOriginalTripImages(content) {
+  return content.match(ORIGINAL_TRIP_IMAGE_FORMAT)?.length ?? 0;
+}
+
 function listContentFiles(directory) {
   if (!fs.existsSync(directory)) {
     return [];
@@ -654,10 +671,11 @@ function validateFiles(files, validateFn) {
   const seenSlugs = new Set();
   const seenTranslationKeys = new Set();
   const records = [];
+  const originalImageFiles = [];
 
   for (const { filePath, expectedLocale } of files) {
     const raw = fs.readFileSync(filePath, "utf8");
-    const { data } = matter(raw);
+    const { data, content } = matter(raw);
     const relativePath = path.relative(ROOT_DIR, filePath);
 
     const slug = path.basename(filePath, ".mdx");
@@ -676,6 +694,11 @@ function validateFiles(files, validateFn) {
     seenSlugs.add(slugKey);
 
     const validationErrors = validateFn(data, relativePath, expectedLocale);
+    validateBody(content, validationErrors);
+    const originalImageCount = countOriginalTripImages(content);
+    if (originalImageCount > 0) {
+      originalImageFiles.push({ file: relativePath, count: originalImageCount });
+    }
     const translationKey =
       isRecord(data) && typeof data.translationKey === "string" && data.translationKey.trim().length > 0
         ? data.translationKey.trim()
@@ -721,7 +744,7 @@ function validateFiles(files, validateFn) {
     }
   }
 
-  return errorsByFile;
+  return { errorsByFile, originalImageFiles };
 }
 
 function main() {
@@ -743,14 +766,28 @@ function main() {
     return;
   }
 
-  const errorsByFile = [
-    ...validateFiles(postFiles, validateFrontmatter),
-    ...validateFiles(cyclingFiles, validateCyclingFrontmatter),
-    ...validateFiles(learningFiles, validateLearningFrontmatter),
+  const results = [
+    validateFiles(postFiles, validateFrontmatter),
+    validateFiles(cyclingFiles, validateCyclingFrontmatter),
+    validateFiles(learningFiles, validateLearningFrontmatter),
   ];
+  const errorsByFile = results.flatMap((result) => result.errorsByFile);
+  const originalImageFiles = results.flatMap((result) => result.originalImageFiles);
+
+  if (originalImageFiles.length > 0) {
+    const total = originalImageFiles.reduce((sum, item) => sum + item.count, 0);
+    console.warn(
+      `[validate-posts] Warning: ${originalImageFiles.length} file(s) embed ${total} original /trips/ image(s) instead of /optimized/. Run "npm run optimize:images" and update the references.`,
+    );
+    if (process.argv.includes("--verbose")) {
+      for (const item of originalImageFiles) {
+        console.warn(`  - ${item.file} (${item.count})`);
+      }
+    }
+  }
 
   if (errorsByFile.length > 0) {
-    console.error(`[validate-posts] Found ${errorsByFile.length} file(s) with frontmatter errors:\n`);
+    console.error(`[validate-posts] Found ${errorsByFile.length} file(s) with content errors:\n`);
     for (const item of errorsByFile) {
       console.error(`- ${item.file}`);
       for (const error of item.errors) {

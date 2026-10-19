@@ -12,6 +12,8 @@ const eslintConfig = defineConfig([
     "out/**",
     "build/**",
     "next-env.d.ts",
+    // Local Claude skills, not part of the site build.
+    ".claude/**",
   ]),
 ]);
 
