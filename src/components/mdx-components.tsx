@@ -2,6 +2,7 @@ import type { CSSProperties } from "react";
 import Image from "next/image";
 import { LightboxTrigger } from "@/components/lightbox-trigger";
 import { StravaActivity } from "@/components/strava-activity";
+import { getLocalImageDimensions } from "@/lib/image-dimensions";
 
 const DEFAULT_CONTENT_IMAGE_SIZES = "(max-width: 768px) 100vw, (max-width: 1280px) 92vw, 1100px";
 const FALLBACK_DIMENSIONS = { width: 1600, height: 1067 };
@@ -92,8 +93,16 @@ export function MdxImage({
     );
   }
 
-  const finalWidth = parseDimension(width) ?? FALLBACK_DIMENSIONS.width;
-  const finalHeight = parseDimension(height) ?? FALLBACK_DIMENSIONS.height;
+  const explicitWidth = parseDimension(width);
+  const explicitHeight = parseDimension(height);
+  const intrinsic =
+    explicitWidth && explicitHeight
+      ? null
+      : isLocalPublicSrc(src)
+        ? getLocalImageDimensions(src)
+        : null;
+  const finalWidth = explicitWidth ?? intrinsic?.width ?? FALLBACK_DIMENSIONS.width;
+  const finalHeight = explicitHeight ?? intrinsic?.height ?? FALLBACK_DIMENSIONS.height;
   const imageStyle: CSSProperties = {
     width: "100%",
     height: "auto",

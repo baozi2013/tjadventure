@@ -1,7 +1,7 @@
 import fs from "node:fs";
 import path from "node:path";
 import matter from "gray-matter";
-import { getSlugFallbackLocations, localizeTripLocations } from "@/data/trip-locations";
+import { localizeTripLocations } from "@/data/trip-locations";
 import { routing, type Locale } from "@/i18n/routing";
 import { DEFAULT_CONTENT_LOCALE, getLocalizedContentPath } from "@/lib/content-locale";
 import { readFileWithMtimeCache } from "@/lib/content-cache";
@@ -203,10 +203,8 @@ function getPostFilenames(locale: Locale = DEFAULT_CONTENT_LOCALE) {
   return fs.readdirSync(postsDir).filter((file) => file.endsWith(".mdx") && !file.startsWith("_"));
 }
 
-function resolvePostLocations(slug: string, frontmatter: PostFrontmatter, locale: Locale) {
-  return frontmatter.locations && frontmatter.locations.length > 0
-    ? localizeTripLocations(frontmatter.locations, locale)
-    : getSlugFallbackLocations(slug, locale);
+function resolvePostLocations(frontmatter: PostFrontmatter, locale: Locale) {
+  return localizeTripLocations(frontmatter.locations ?? [], locale);
 }
 
 function getPostPath(fileName: string, locale: Locale) {
@@ -224,7 +222,7 @@ function readParsedPost(fullPath: string, slug: string, locale: Locale): ParsedP
       frontmatter,
       content,
       headings: extractContentHeadings(content),
-      locations: resolvePostLocations(slug, frontmatter, locale),
+      locations: resolvePostLocations(frontmatter, locale),
     };
   });
 }
