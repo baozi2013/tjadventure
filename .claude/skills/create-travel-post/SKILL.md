@@ -174,6 +174,23 @@ Rules:
 4. Cards render to that skill's own output location, not into `content/` or `public/` — they're a deliverable handed back to the user (e.g. via SendUserFile), not new tracked repo assets, unless the user explicitly asks to check the PNGs into the repo.
 5. If `guizang-social-card-skill` isn't installed or its Playwright browser isn't set up, say so plainly rather than attempting a manual approximation — don't hand-roll a poster in this skill's own tooling.
 
+### Default 小红书 template: magazine cover + photo-only pages + post text
+
+The user's preferred format (unless they ask for text cards):
+
+1. **Page 01 — magazine cover** from `guizang-social-card-skill` (M16 image-led cover: big masthead, short cover lines, cover photo from the post). This is the only page with text.
+2. **Pages 02+ — photos only, no text.** Pick 12-17 photos in story order (Xiaohongshu allows 18 images total). A portrait photo fills a 3:4 page; two landscape photos stack on one page. Build them with:
+   ```bash
+   python3 .claude/skills/create-travel-post/scripts/build_photo_pages.py LAYOUT.txt IMG_DIR OUT_DIR [--bg "#0e0d0c"]
+   ```
+   `LAYOUT.txt` has one page per line: `day1-03.jpg@0.4` (single, vertical focal point) or `day1-02.jpg, day1-05.jpg` (stacked pair). Check every page for cropped-off faces and adjust the focal point.
+3. **Light retouch first.** Run photos the user has *not* already retouched through:
+   ```bash
+   python3 .claude/skills/create-travel-post/scripts/enhance_photos.py IN_DIR OUT_DIR --sheet before_after.jpg
+   ```
+   It is local and gentle (auto levels, shadow lift, local contrast, vibrance, auto white balance on normally lit shots only, light sharpening) and keeps night/neon scenes dark. Inspect the before/after sheet. Skip photos the user says they already edited. Retouched copies go to the card task folder, not `public/`, unless the user asks to update the post's photos.
+4. **Post text** — always hand back a ready-to-paste note: title (≤20 字), emoji-led body that follows the cover story, a short 小贴士 list, and 8-10 hashtags.
+
 ## Required Frontmatter
 
 Always include:
