@@ -6,7 +6,7 @@ Runs fully locally (PIL + numpy + scikit-image). Per image:
   2. shadow lift / highlight protect tone curve
   3. local contrast (CLAHE on Lab L, blended)
   4. vibrance (boosts muted colors more than already-saturated ones)
-  5. gray-world white balance (auto: only on normally lit shots, so neon/sunset moods survive)
+  5. white balance from near-neutral pixels, capped (auto: off for night shots)
   6. light unsharp mask
 
 Usage:
@@ -30,9 +30,16 @@ def enhance(img: Image.Image, strength: float, wb: float) -> Image.Image:
     if wb < 0:  # auto: neutralize casts only on normally lit shots; keep neon/night moods
         wb = 0.0 if night else 0.35
     if wb > 0:
-        means = rgb.reshape(-1, 3).mean(axis=0)
-        gains = means.mean() / np.maximum(means, 1e-4)
-        rgb = np.clip(rgb * (1 + (gains - 1) * wb), 0, 1)
+        # Estimate the cast from near-neutral pixels only (stone, pavement, clouds, white
+        # clothes). Plain gray-world would read a blue sky or a lawn as a "cast" and
+        # push rocks yellow / skies gray. Skip when there is too little neutral surface.
+        lab0 = color.rgb2lab(rgb)
+        chroma0 = np.hypot(lab0[..., 1], lab0[..., 2])
+        neutral = (chroma0 < 14) & (lab0[..., 0] > 25) & (lab0[..., 0] < 95)
+        if neutral.mean() > 0.05:
+            means = rgb[neutral].mean(axis=0)
+            gains = np.clip(means.mean() / np.maximum(means, 1e-4), 0.93, 1.07)
+            rgb = np.clip(rgb * (1 + (gains - 1) * wb), 0, 1)
 
     lab = color.rgb2lab(rgb)
     L = lab[..., 0] / 100.0
@@ -73,6 +80,22 @@ def enhance(img: Image.Image, strength: float, wb: float) -> Image.Image:
     return result.filter(ImageFilter.UnsharpMask(radius=1.6, percent=int((35 if night else 60) * strength), threshold=3))
 
 
+def save_like(dst: Image.Image, src: Image.Image, out_path: str, quality: int) -> None:
+    """Save keeping the source color profile (e.g. iPhone Display P3) and EXIF.
+
+    Pixels were already rotated by exif_transpose, so orientation is reset to 1.
+    Dropping the ICC profile would make P3 photos render as sRGB and look washed out.
+    """
+    extra = {}
+    if src.info.get("icc_profile"):
+        extra["icc_profile"] = src.info["icc_profile"]
+    exif = src.getexif()
+    if exif:
+        exif[0x0112] = 1
+        extra["exif"] = exif.tobytes()
+    dst.save(out_path, "JPEG", quality=quality, optimize=True, progressive=True, **extra)
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("in_dir")
@@ -90,7 +113,7 @@ def main():
         src = ImageOps.exif_transpose(Image.open(f))
         dst = enhance(src, args.strength, args.wb)
         out_path = os.path.join(args.out_dir, os.path.splitext(os.path.basename(f))[0] + ".jpg")
-        dst.save(out_path, quality=args.quality, optimize=True, progressive=True)
+        save_like(dst, src, out_path, args.quality)
         pairs.append((src, dst, os.path.basename(f)))
         print(f"enhanced {os.path.basename(f)}")
 
