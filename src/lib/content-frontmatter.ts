@@ -1,3 +1,4 @@
+import GithubSlugger, { slug as githubSlug } from "github-slugger";
 import { isSupportedLocale, routing, type Locale } from "@/i18n/routing";
 
 export type RawFrontmatter = Record<string, unknown>;
@@ -16,13 +17,10 @@ export function isObjectRecord(value: unknown): value is RawFrontmatter {
   return typeof value === "object" && value !== null && !Array.isArray(value);
 }
 
+// Must match rehype-slug (which uses github-slugger) so table-of-contents links
+// resolve to the ids actually rendered on headings.
 export function slugify(text: string) {
-  return text
-    .trim()
-    .toLowerCase()
-    .replace(/[\s/]+/g, "-")
-    .replace(/[^a-z0-9一-龥\-]/g, "")
-    .replace(/-+/g, "-");
+  return githubSlug(text);
 }
 
 export function makeFrontmatterFail(namespace: string, filePath: string): Fail {
@@ -201,18 +199,42 @@ export function extractPlainText(content: string) {
   );
 }
 
-export function extractHeadings(content: string): ContentHeading[] {
-  const lines = content.split("\n");
-  const headings: ContentHeading[] = [];
+// Plain text of an inline-markdown heading, as rehype-slug sees it after rendering.
+function headingText(markdown: string) {
+  return markdown
+    .replace(/!\[([^\]]*)\]\([^)]*\)/g, "$1")
+    .replace(/\[([^\]]+)\]\([^)]*\)/g, "$1")
+    .replace(/`([^`]+)`/g, "$1")
+    .replace(/(\*\*|__)(.+?)\1/g, "$2")
+    .replace(/(\*|_)(.+?)\1/g, "$2")
+    .replace(/<[^>]+>/g, "")
+    .replace(/\s+#+\s*$/, "")
+    .trim();
+}
 
-  for (const line of lines) {
-    if (line.startsWith("## ")) {
-      const text = line.replace("## ", "").trim();
-      headings.push({ level: 2, text, id: slugify(text) });
+export function extractHeadings(content: string): ContentHeading[] {
+  // One slugger per document, fed every heading level in order, so duplicate
+  // headings get the same "-1", "-2" suffixes rehype-slug gives them.
+  const slugger = new GithubSlugger();
+  const headings: ContentHeading[] = [];
+  let fence: string | null = null;
+
+  for (const line of content.split("\n")) {
+    const fenceMatch = line.match(/^\s{0,3}(```|~~~)/);
+    if (fenceMatch) {
+      fence = fence === null ? fenceMatch[1] : fence === fenceMatch[1] ? null : fence;
+      continue;
     }
-    if (line.startsWith("### ")) {
-      const text = line.replace("### ", "").trim();
-      headings.push({ level: 3, text, id: slugify(text) });
+    if (fence) continue;
+
+    const match = line.match(/^(#{1,6})\s+(.+)$/);
+    if (!match) continue;
+
+    const text = headingText(match[2]);
+    const id = slugger.slug(text);
+    const level = match[1].length;
+    if (level === 2 || level === 3) {
+      headings.push({ level, text, id });
     }
   }
 

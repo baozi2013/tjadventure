@@ -6,11 +6,22 @@ import { useTranslations } from "next-intl";
 
 type LightboxTriggerProps = {
   src: string;
+  srcSet?: string;
   alt: string;
   children: ReactNode;
 };
 
-function ImageLightbox({ src, alt, onClose }: { src: string; alt: string; onClose: () => void }) {
+function ImageLightbox({
+  src,
+  srcSet,
+  alt,
+  onClose,
+}: {
+  src: string;
+  srcSet?: string;
+  alt: string;
+  onClose: () => void;
+}) {
   const t = useTranslations("Lightbox");
 
   useEffect(() => {
@@ -51,6 +62,8 @@ function ImageLightbox({ src, alt, onClose }: { src: string; alt: string; onClos
       {/* eslint-disable-next-line @next/next/no-img-element */}
       <img
         src={src}
+        srcSet={srcSet}
+        sizes="92vw"
         alt={alt}
         onClick={(event) => event.stopPropagation()}
         className="max-h-[90vh] max-w-[92vw] rounded-lg object-contain"
@@ -60,7 +73,7 @@ function ImageLightbox({ src, alt, onClose }: { src: string; alt: string; onClos
   );
 }
 
-export function LightboxTrigger({ src, alt, children }: LightboxTriggerProps) {
+export function LightboxTrigger({ src, srcSet, alt, children }: LightboxTriggerProps) {
   const t = useTranslations("Lightbox");
   const [isOpen, setIsOpen] = useState(false);
 
@@ -69,12 +82,14 @@ export function LightboxTrigger({ src, alt, children }: LightboxTriggerProps) {
       <button
         type="button"
         onClick={() => setIsOpen(true)}
-        aria-label={t("open")}
+        // Including the alt text keeps the photo description audible; a bare
+        // "View full image" label would replace it for screen readers.
+        aria-label={alt ? `${t("open")}: ${alt}` : t("open")}
         className="block w-full cursor-zoom-in appearance-none border-0 bg-transparent p-0 text-left"
       >
         {children}
       </button>
-      {isOpen ? <ImageLightbox src={src} alt={alt} onClose={() => setIsOpen(false)} /> : null}
+      {isOpen ? <ImageLightbox src={src} srcSet={srcSet} alt={alt} onClose={() => setIsOpen(false)} /> : null}
     </>
   );
 }

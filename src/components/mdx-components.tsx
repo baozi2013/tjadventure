@@ -1,5 +1,5 @@
 import type { CSSProperties } from "react";
-import Image from "next/image";
+import Image, { getImageProps } from "next/image";
 import { LightboxTrigger } from "@/components/lightbox-trigger";
 import { StravaActivity } from "@/components/strava-activity";
 import { getLocalImageDimensions } from "@/lib/image-dimensions";
@@ -109,8 +109,19 @@ export function MdxImage({
     ...(style ?? {}),
   };
 
+  // The lightbox shows the optimized full-width variant (<=1920px) instead of the
+  // original upload, which can be several MB.
+  const { props: lightboxImage } = getImageProps({
+    src,
+    alt,
+    width: finalWidth,
+    height: finalHeight,
+    sizes: "100vw",
+    quality: 75,
+  });
+
   return (
-    <LightboxTrigger src={src} alt={alt}>
+    <LightboxTrigger src={lightboxImage.src} srcSet={lightboxImage.srcSet} alt={alt}>
       <Image
         src={src}
         alt={alt}

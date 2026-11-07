@@ -5,3 +5,9 @@
 node_modules
 npm-debug.log*
 README.md
+.env*
+.vercel
+.claude
+coverage
+data
+content/cycling/_drafts

@@ -48,6 +48,11 @@ import type { SearchIndexEntry } from "@/types/search";
 const CYCLING_DIR = path.join(process.cwd(), "content/cycling");
 const CYCLING_EN_DIR = path.join(process.cwd(), "content/en/cycling");
 const MOVING_TIME_FORMAT = /^\d{1,3}:[0-5]\d:[0-5]\d$/;
+// Labels for search cards; kept in sync with the RSS feed's "骑行" / "Cycling".
+const CYCLING_SEARCH_LABELS: Record<Locale, { category: string; rideTypes: Record<CyclingRideType, string> }> = {
+  "zh-CN": { category: "骑行", rideTypes: { road: "公路骑行", gravel: "砾石骑行", event: "骑行活动" } },
+  "en-US": { category: "Cycling", rideTypes: { road: "Road ride", gravel: "Gravel ride", event: "Event ride" } },
+};
 
 function readRideType(rawRideType: string, fail: Fail): CyclingRideType {
   if (!CYCLING_RIDE_TYPES.includes(rawRideType as CyclingRideType)) {
@@ -401,8 +406,9 @@ export function getCyclingSearchIndex(locale: Locale = DEFAULT_CONTENT_LOCALE): 
         formatMeasurement(entry.elevationGain),
         entry.movingTime,
       ].join(" ");
-      const category = `${entry.location.region} · Cycling`;
-      const rideLabel = `${entry.rideType.charAt(0).toUpperCase()}${entry.rideType.slice(1)} ride`;
+      const labels = CYCLING_SEARCH_LABELS[locale];
+      const category = `${entry.location.region} · ${labels.category}`;
+      const rideLabel = labels.rideTypes[entry.rideType];
       const searchText = normalizeText(
         [
           entry.title,

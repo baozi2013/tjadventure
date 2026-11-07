@@ -177,16 +177,17 @@ describe("slugify", () => {
     expect(slugify("Hello World")).toBe("hello-world");
   });
 
-  it("collapses repeated separators", () => {
-    expect(slugify("Hello   World///Trip")).toBe("hello-world-trip");
-  });
-
   it("keeps CJK characters", () => {
     expect(slugify("旧金山 之旅")).toBe("旧金山-之旅");
   });
 
   it("strips punctuation", () => {
     expect(slugify("What's Next?!")).toBe("whats-next");
+  });
+
+  it("matches rehype-slug for bilingual headings with separators", () => {
+    expect(slugify("Day 1｜Klamath Falls 露营 + Crater Lake")).toBe("day-1klamath-falls-露营--crater-lake");
+    expect(slugify("行程概览 / Trip Overview")).toBe("行程概览--trip-overview");
   });
 });
 
@@ -196,6 +197,15 @@ describe("extractHeadings", () => {
     expect(extractHeadings(content)).toEqual([
       { level: 2, text: "Ride Summary", id: "ride-summary" },
       { level: 3, text: "Route Notes", id: "route-notes" },
+    ]);
+  });
+
+  it("suffixes duplicate headings and ignores headings inside code fences", () => {
+    const content = ["# Title", "## Notes", "```", "## not a heading", "```", "### Notes", "## **Bold** [link](/x)"].join("\n");
+    expect(extractHeadings(content)).toEqual([
+      { level: 2, text: "Notes", id: "notes" },
+      { level: 3, text: "Notes", id: "notes-1" },
+      { level: 2, text: "Bold link", id: "bold-link" },
     ]);
   });
 
